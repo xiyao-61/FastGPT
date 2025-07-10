@@ -19,7 +19,7 @@ import { getAIApi } from '../../../core/ai/config';
 import { createRootOrg } from '../../permission/org/controllers';
 import { refreshSourceAvatar } from '../../../common/file/image/controller';
 
-async function getTeamMember(match: Record<string, any>): Promise<TeamTmbItemType> {
+export async function getTeamMember(match: Record<string, any>): Promise<TeamTmbItemType> {
   const tmb = await MongoTeamMember.findOne(match).populate<{ team: TeamSchema }>('team').lean();
   if (!tmb) {
     return Promise.reject('member not exist');
@@ -91,7 +91,7 @@ export async function createDefaultTeam({
   userId: string;
   teamName?: string;
   avatar?: string;
-  session: ClientSession;
+  session?: ClientSession;
 }) {
   // auth default team
   const tmb = await MongoTeamMember.findOne({

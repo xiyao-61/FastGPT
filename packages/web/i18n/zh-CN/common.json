@@ -920,6 +920,7 @@
   "no_more_data": "没有更多了~",
   "no_pay_way": "系统无合适的支付渠道",
   "no_select_data": "没有可选值",
+  "no_data": "没有数据",
   "not_model_config": "未配置相关模型",
   "not_open": "未开启",
   "not_permission": "当前订阅套餐不支持团队操作日志",
@@ -1311,5 +1312,7 @@
   "zoomin_tip": "缩小  ctrl  -",
   "zoomin_tip_mac": "缩小  ⌘  -",
   "zoomout_tip": "放大  ctrl  +",
-  "zoomout_tip_mac": "放大  ⌘  +"
+  "zoomout_tip_mac": "放大  ⌘  +",
+  "action_success": "操作成功",
+  "action_error": "操作失败"
 }

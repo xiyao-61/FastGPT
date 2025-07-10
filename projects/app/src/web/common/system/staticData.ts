@@ -10,11 +10,14 @@ export const clientInitData = async (
   feConfigs: FastGPTFeConfigsType;
 }> => {
   try {
-    const res = await getSystemInitData(useSystemStore.getState().initDataBufferId);
+    const res = (await getSystemInitData(useSystemStore.getState().initDataBufferId)) || {
+      feConfigs: {}
+    };
     useSystemStore.getState().initStaticData(res);
-
+    const config = { ...(res.feConfigs || useSystemStore.getState().feConfigs || {}) };
+    config.register_method = ['email'];
     return {
-      feConfigs: res.feConfigs || useSystemStore.getState().feConfigs || {}
+      feConfigs: config
     };
   } catch (error) {
     if (retry > 0) {

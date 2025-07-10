@@ -4,6 +4,6 @@ export const clearToken = () => {
   try {
     return loginOut();
   } catch (error) {
-    error;
+    return Promise.reject(error);
   }
 };

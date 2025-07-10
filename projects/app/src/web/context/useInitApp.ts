@@ -85,7 +85,7 @@ export const useInitApp = () => {
       );
     }
 
-    loadGitStar();
+    // loadGitStar();
 
     setScripts(scripts || []);
     setInitd();

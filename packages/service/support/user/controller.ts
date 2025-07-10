@@ -2,6 +2,7 @@ import { type UserType } from '@fastgpt/global/support/user/type';
 import { MongoUser } from './schema';
 import { getTmbInfoByTmbId, getUserDefaultTeam } from './team/controller';
 import { ERROR_ENUM } from '@fastgpt/global/common/error/errorCode';
+import { createDefaultTeam } from './team/controller';
 
 export async function authUserExist({ userId, username }: { userId?: string; username?: string }) {
   if (userId) {
@@ -48,5 +49,24 @@ export async function getUserDetail({
     notificationAccount: tmb.notificationAccount,
     permission: tmb.permission,
     contact: user.contact
+  };
+}
+
+//new add
+export async function createNewUser({
+  username,
+  password
+}: {
+  username: string;
+  password: string;
+}) {
+  const user = await MongoUser.create({
+    username,
+    password
+  });
+  await createDefaultTeam({ userId: user._id });
+  return {
+    _id: user._id,
+    username: user.username
   };
 }

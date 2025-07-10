@@ -25,6 +25,8 @@ import {
 } from '@/web/core/app/api/collaborator';
 import MyTooltip from '@fastgpt/web/components/common/MyTooltip';
 import AppTypeTag from './TypeTag';
+import MemberModal from '@/components/support/permission/MemberManager/MemberModal';
+import CollaboratorContextProvider from '@/components/support/permission/MemberManager/context';
 
 const EditResourceModal = dynamic(() => import('@/components/common/Modal/EditResourceModal'));
 const ConfigPerModal = dynamic(() => import('@/components/support/permission/ConfigPerModal'));
@@ -59,6 +61,7 @@ const ListItem = () => {
   const [editedApp, setEditedApp] = useState<EditResourceInfoFormType>();
   const [editHttpPlugin, setEditHttpPlugin] = useState<EditHttpPluginProps>();
   const [editPerAppId, setEditPerAppId] = useState<string>();
+  const [showMemberModal, setShowMemberModal] = useState<{ resourceId: string } | null>(null);
 
   const editPerApp = useMemo(
     () =>
@@ -336,7 +339,8 @@ const ListItem = () => {
                                               icon: 'key',
                                               type: 'grayBg' as MenuItemType,
                                               label: t('common:permission.Permission'),
-                                              onClick: () => setEditPerAppId(app._id)
+                                              onClick: () =>
+                                                setShowMemberModal({ resourceId: app._id })
                                             }
                                           ]
                                         : [])
@@ -406,51 +410,32 @@ const ListItem = () => {
           onEdit={({ id, ...data }) => onUpdateApp(id, data)}
         />
       )}
-      {!!editPerApp && (
-        <ConfigPerModal
-          {...(editPerApp.permission.isOwner && {
-            onChangeOwner: (tmbId: string) =>
-              changeOwner({
-                appId: editPerApp._id,
-                ownerId: tmbId
-              }).then(() => loadMyApps())
-          })}
-          refetchResource={loadMyApps}
-          hasParent={Boolean(parentId)}
-          resumeInheritPermission={onResumeInheritPermission}
-          isInheritPermission={editPerApp.inheritPermission}
-          avatar={editPerApp.avatar}
-          name={editPerApp.name}
-          managePer={{
-            permission: editPerApp.permission,
-            onGetCollaboratorList: () => getCollaboratorList(editPerApp._id),
-            permissionList: AppPermissionList,
-            onUpdateCollaborators: (props: {
-              members?: string[];
-              groups?: string[];
-              orgs?: string[];
-              permission: PermissionValueType;
-            }) =>
-              postUpdateAppCollaborators({
-                ...props,
-                appId: editPerApp._id
-              }),
-            onDelOneCollaborator: async (
-              props: RequireOnlyOne<{
-                tmbId?: string;
-                groupId?: string;
-                orgId?: string;
-              }>
-            ) =>
-              deleteAppCollaborators({
-                ...props,
-                appId: editPerApp._id
-              }),
-            refreshDeps: [editPerApp.inheritPermission]
-          }}
-          onClose={() => setEditPerAppId(undefined)}
-        />
-      )}
+      {!!showMemberModal &&
+        (() => {
+          const app = myApps.find((a) => a._id === showMemberModal.resourceId);
+          if (!app) return null;
+          return (
+            <CollaboratorContextProvider
+              permission={app.permission}
+              permissionList={AppPermissionList}
+              onGetCollaboratorList={() => getCollaboratorList(showMemberModal.resourceId)}
+              onUpdateCollaborators={(props) =>
+                postUpdateAppCollaborators({ ...props, appId: showMemberModal.resourceId })
+              }
+              onDelOneCollaborator={async (props) =>
+                deleteAppCollaborators({ ...props, appId: showMemberModal.resourceId })
+              }
+            >
+              {() => (
+                <MemberModal
+                  resourceType="app"
+                  resourceId={showMemberModal.resourceId}
+                  onClose={() => setShowMemberModal(null)}
+                />
+              )}
+            </CollaboratorContextProvider>
+          );
+        })()}
       {!!editHttpPlugin && (
         <HttpEditModal
           defaultPlugin={editHttpPlugin}

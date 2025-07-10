@@ -130,6 +130,9 @@ function responseError(err: any) {
   // 有报错响应
   if (data?.code in TOKEN_ERROR_CODE) {
     if (!isOutlinkPage) {
+      // if (err?.config?.url) {
+      //   window.alert('未授权API路径: ' + (err.config.baseURL || '') + err.config.url);
+      // }
       clearToken();
       window.location.replace(
         getWebReqUrl(`/login?lastRoute=${encodeURIComponent(location.pathname + location.search)}`)

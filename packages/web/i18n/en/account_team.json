@@ -5,6 +5,7 @@
   "7days": "7 Days",
   "accept": "accept",
   "action": "operate",
+  "team": "team",
   "admin_add_plan": "Add a team package",
   "admin_add_user": "Add a user",
   "admin_change_license": "Change of license",
@@ -194,6 +195,11 @@
   "login": "Log in",
   "manage_member": "Managing members",
   "member": "member",
+  "all_users": "All users",
+  "all_team": "All teams",
+  "team_name": "Team name",
+  "team_owner": "Team owner",
+  "new_team": "Add Team",
   "member_group": "Belonging to member group",
   "move_app": "App location movement",
   "move_dataset": "Mobile Knowledge Base",
@@ -213,6 +219,7 @@
   "permission_datasetCreate_Tip": "Can create knowledge bases in the root directory (creation permissions in folders are controlled by the folder)",
   "permission_manage": "Admin",
   "permission_manage_tip": "Can manage members, create groups, manage all groups, and assign permissions to groups and members",
+  "team_manage": "Team Manage",
   "please_bind_contact": "Please bind the contact information",
   "purchase_plan": "Upgrade package",
   "recover_team_member": "Member Recovery",
@@ -261,5 +268,6 @@
   "user_team_invite_member": "Invite members",
   "user_team_leave_team": "Leave the team",
   "user_team_leave_team_failed": "Failure to leave the team",
-  "waiting": "To be accepted"
+  "waiting": "To be accepted",
+  "no_member": "No members yet"
 }

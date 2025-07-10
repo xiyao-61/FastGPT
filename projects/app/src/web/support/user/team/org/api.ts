@@ -14,10 +14,10 @@ export const getOrgList = (params: {
   orgId: string;
   withPermission?: boolean;
   searchKey?: string;
-}) => POST<OrgListItemType[]>(`/proApi/support/user/team/org/list`, params);
+}) => POST<OrgListItemType[]>(`/support/user/team/org/list`, params);
 
 export const postCreateOrg = (data: postCreateOrgData) =>
-  POST('/proApi/support/user/team/org/create', data);
+  POST('/support/user/team/org/create', data);
 
 export const deleteOrg = (orgId: string) =>
   DELETE('/proApi/support/user/team/org/delete', { orgId });
@@ -29,7 +29,7 @@ export const putUpdateOrg = (data: putUpdateOrgData) =>
 
 // org members
 export const putUpdateOrgMembers = (data: putUpdateOrgMembersData) =>
-  PUT('/proApi/support/user/team/org/updateMembers', data);
+  PUT('/support/user/team/org/updateMembers', data);
 
 export const getOrgMembers = (data: PaginationProps<{ orgPath?: string }>) =>
   GET<PaginationResponse<TeamMemberItemType>>(`/proApi/support/user/team/org/members`, data);

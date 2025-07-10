@@ -63,10 +63,10 @@ export const TeamModalContextProvider = ({ children }: { children: ReactNode }) 
     refreshDeps: [userInfo?._id]
   });
 
-  const { data: teamMemberCountData, refresh: refetchTeamSize } = useRequest2(getTeamMemberCount, {
-    manual: false,
-    refreshDeps: [userInfo?.team?.teamId]
-  });
+  // const { data: teamMemberCountData, refresh: refetchTeamSize } = useRequest2(getTeamMemberCount, {
+  //   manual: false,
+  //   refreshDeps: [userInfo?.team?.teamId]
+  // });
 
   const { runAsync: onSwitchTeam, loading: isSwitchingTeam } = useRequest2(
     async (teamId: string) => {
@@ -90,9 +90,9 @@ export const TeamModalContextProvider = ({ children }: { children: ReactNode }) 
     onSwitchTeam,
 
     // create | update team
-    setEditTeamData,
-    teamSize: teamMemberCountData?.count || 0,
-    refetchTeamSize
+    setEditTeamData
+    // teamSize: teamMemberCountData?.count || 0,
+    // refetchTeamSize
   };
 
   return (

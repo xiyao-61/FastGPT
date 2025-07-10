@@ -84,6 +84,7 @@
   "team.Team Name": "Team name",
   "team.Update Team": "Update team information",
   "team.add_collaborator": "Add Collaborator",
+  "team.resource_permission": "Edit User Permission",
   "team.add_permission": "Add permissions",
   "team.add_writer": "Add writable members",
   "team.avatar_and_name": "avatar",

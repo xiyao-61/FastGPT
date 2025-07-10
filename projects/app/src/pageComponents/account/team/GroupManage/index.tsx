@@ -154,7 +154,7 @@ function MemberTable({ Tabs }: { Tabs: React.ReactNode }) {
                     </MyTooltip>
                   </Td>
                   <Td>
-                    {group.permission?.hasManagePer && (
+                    {!group.permission?.hasManagePer && (
                       <MyMenu
                         Button={<IconButton name={'more'} />}
                         menuList={[

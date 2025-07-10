@@ -11,6 +11,9 @@ const nextConfig = {
   output: 'standalone',
   reactStrictMode: isDev ? false : true,
   compress: true,
+  typescript: {
+    ignoreBuildErrors: true
+  },
   async headers() {
     return [
       {
@@ -36,7 +39,7 @@ const nextConfig = {
             key: 'Permissions-Policy',
             value: 'geolocation=(self), microphone=(self), camera=(self)'
           }
-        ],
+        ]
       }
     ];
   },

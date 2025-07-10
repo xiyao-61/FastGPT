@@ -407,6 +407,7 @@ const Info = ({ datasetId }: { datasetId: string }) => {
                   }
                 }
               }}
+              datasetId={datasetId}
             />
           </Box>
         </>

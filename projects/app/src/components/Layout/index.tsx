@@ -43,6 +43,7 @@ const ManualCopyModal = dynamic(
 const pcUnShowLayoutRoute: Record<string, boolean> = {
   '/': true,
   '/login': true,
+  '/register': true,
   '/login/provider': true,
   '/login/fastlogin': true,
   '/chat/share': true,
@@ -55,6 +56,7 @@ const pcUnShowLayoutRoute: Record<string, boolean> = {
 const phoneUnShowLayoutRoute: Record<string, boolean> = {
   '/': true,
   '/login': true,
+  '/register': true,
   '/login/provider': true,
   '/login/fastlogin': true,
   '/chat/share': true,

@@ -47,7 +47,7 @@ export const useUserStore = create<State>()(
         userInfo: null,
         isTeamAdmin: false,
         async initUserInfo() {
-          get().initTeamPlanStatus();
+          // get().initTeamPlanStatus();
 
           const res = await getTokenLogin();
           get().setUserInfo(res);

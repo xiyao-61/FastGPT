@@ -71,6 +71,8 @@ function OrgMemberManageModal({
 
   const { run: onUpdate, loading: isLoadingUpdate } = useRequest2(
     () => {
+      console.log('----888-----');
+      console.log(selected);
       return putUpdateOrgMembers({
         orgId: currentOrg._id,
         members: selected.map((member) => ({

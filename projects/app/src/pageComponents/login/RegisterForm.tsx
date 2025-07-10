@@ -30,7 +30,7 @@ interface RegisterType {
   username: string;
   password: string;
   password2: string;
-  code: string;
+  code?: string;
 }
 
 const RegisterForm = ({ setPageType, loginSuccess }: Props) => {
@@ -52,11 +52,10 @@ const RegisterForm = ({ setPageType, loginSuccess }: Props) => {
   const { SendCodeBox } = useSendCode({ type: 'register' });
 
   const { runAsync: onclickRegister, loading: requesting } = useRequest2(
-    async ({ username, password, code }: RegisterType) => {
+    async ({ username, password }: RegisterType) => {
       loginSuccess(
         await postRegister({
           username,
-          code,
           password,
           inviterId: getInviterId(),
           bd_vid: getBdVId(),
@@ -72,17 +71,17 @@ const RegisterForm = ({ setPageType, loginSuccess }: Props) => {
       });
 
       // auto register template app
-      setTimeout(() => {
-        Object.entries(emptyTemplates).map(([type, emptyTemplate]) => {
-          postCreateApp({
-            avatar: emptyTemplate.avatar,
-            name: t(emptyTemplate.name as any),
-            modules: emptyTemplate.nodes,
-            edges: emptyTemplate.edges,
-            type: type as AppTypeEnum
-          });
-        });
-      }, 100);
+      // setTimeout(() => {
+      //   Object.entries(emptyTemplates).map(([type, emptyTemplate]) => {
+      //     postCreateApp({
+      //       avatar: emptyTemplate.avatar,
+      //       name: t(emptyTemplate.name as any),
+      //       modules: emptyTemplate.nodes,
+      //       edges: emptyTemplate.edges,
+      //       type: type as AppTypeEnum
+      //     });
+      //   });
+      // }, 100);
     },
     {
       refreshDeps: [loginSuccess, t, toast]
@@ -140,7 +139,7 @@ const RegisterForm = ({ setPageType, loginSuccess }: Props) => {
             })}
           ></Input>
         </FormControl>
-        <FormControl
+        {/* <FormControl
           mt={6}
           isInvalid={!!errors.code}
           display={'flex'}
@@ -158,7 +157,7 @@ const RegisterForm = ({ setPageType, loginSuccess }: Props) => {
             })}
           ></Input>
           <SendCodeBox username={username} />
-        </FormControl>
+        </FormControl> */}
         <FormControl mt={6} isInvalid={!!errors.password}>
           <Input
             bg={'myGray.50'}

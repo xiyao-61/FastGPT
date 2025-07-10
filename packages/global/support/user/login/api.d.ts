@@ -7,6 +7,6 @@ export type GetWXLoginQRResponse = {
 
 export type AccountRegisterBody = {
   username: string;
-  code: string;
+  code?: string;
   password: string;
 } & TrackRegisterParams;

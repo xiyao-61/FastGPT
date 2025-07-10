@@ -10,6 +10,7 @@ import { getDocPath } from '@/web/common/system/doc';
 import { useTranslation } from 'next-i18next';
 import FormLayout from './FormLayout';
 import { useRequest2 } from '@fastgpt/web/hooks/useRequest';
+import { useRouter } from 'next/router';
 
 interface Props {
   setPageType: Dispatch<`${LoginPageTypeEnum}`>;
@@ -25,6 +26,7 @@ const LoginForm = ({ setPageType, loginSuccess }: Props) => {
   const { t } = useTranslation();
   const { toast } = useToast();
   const { feConfigs } = useSystemStore();
+  const router = useRouter();
   const {
     register,
     handleSubmit,
@@ -51,12 +53,12 @@ const LoginForm = ({ setPageType, loginSuccess }: Props) => {
     }
   );
 
-  const isCommunityVersion = !!(feConfigs?.register_method && !feConfigs?.isPlus);
+  // const isCommunityVersion = !!(feConfigs?.register_method && !feConfigs?.isPlus);
 
   const placeholder = (() => {
-    if (isCommunityVersion) {
-      return t('login:use_root_login');
-    }
+    // if (isCommunityVersion) {
+    //   return t('login:use_root_login');
+    // }
     return [t('common:support.user.login.Username')]
       .concat(
         feConfigs?.login_method?.map((item) => {
@@ -96,11 +98,7 @@ const LoginForm = ({ setPageType, loginSuccess }: Props) => {
             bg={'myGray.50'}
             size={'lg'}
             type={'password'}
-            placeholder={
-              isCommunityVersion
-                ? t('login:root_password_placeholder')
-                : t('common:support.user.login.Password')
-            }
+            placeholder={t('common:support.user.login.Password')}
             {...register('password', {
               required: true,
               maxLength: {
@@ -158,7 +156,15 @@ const LoginForm = ({ setPageType, loginSuccess }: Props) => {
           color={'primary.700'}
           fontWeight={'medium'}
         >
-          {feConfigs?.find_password_method && feConfigs.find_password_method.length > 0 && (
+          <Box
+            cursor={'pointer'}
+            _hover={{ textDecoration: 'underline' }}
+            onClick={() => setPageType('forgetPassword')}
+            fontSize="mini"
+          >
+            {t('login:forget_password')}
+          </Box>
+          {/* {feConfigs?.find_password_method && feConfigs.find_password_method.length > 0 && (
             <Box
               cursor={'pointer'}
               _hover={{ textDecoration: 'underline' }}
@@ -167,14 +173,14 @@ const LoginForm = ({ setPageType, loginSuccess }: Props) => {
             >
               {t('login:forget_password')}
             </Box>
-          )}
+          )} */}
           {feConfigs?.register_method && feConfigs.register_method.length > 0 && (
             <Flex alignItems={'center'}>
               <Box mx={3} h={'12px'} w={'1px'} bg={'myGray.250'}></Box>
               <Box
                 cursor={'pointer'}
                 _hover={{ textDecoration: 'underline' }}
-                onClick={() => setPageType('register')}
+                onClick={() => router.push('/register')}
                 fontSize="mini"
               >
                 {t('login:register')}

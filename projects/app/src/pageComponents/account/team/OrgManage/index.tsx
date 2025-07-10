@@ -141,7 +141,7 @@ function OrgTable({ Tabs }: { Tabs: React.ReactNode }) {
           )}
         </Box>
         <Flex flex={'1 0 0'} h={0} w={'100%'} gap={'4'}>
-          <MemberScrollData flex="1" isLoading={isLoading}>
+          <MemberScrollData flex="1">
             <TableContainer>
               <Table>
                 <Thead>
@@ -155,6 +155,7 @@ function OrgTable({ Tabs }: { Tabs: React.ReactNode }) {
                   </Tr>
                 </Thead>
                 <Tbody>
+                  {/* .filter((org) => org.path !== '') */}
                   {orgs
                     .filter((org) => org.path !== '')
                     .map((org) => (

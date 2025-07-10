@@ -25,6 +25,12 @@ export type TeamSchema = {
   notificationAccount?: string;
 } & ThirdPartyAccountType;
 
+export type TeamsType = {
+  teamId: string;
+  teamName: string;
+  ownerName: string;
+};
+
 export type tagsType = {
   label: string;
   key: string;
@@ -78,8 +84,9 @@ export type TeamMemberItemType<
   } = { withPermission: true; withOrgs: true; withGroupRole: false }
 > = {
   userId: string;
-  tmbId: string;
+  tmbId?: string;
   teamId: string;
+  teamName: string;
   memberName: string;
   avatar: string;
   role: `${TeamMemberRoleEnum}`;
@@ -135,3 +142,37 @@ export type TeamInvoiceHeaderInfoSchemaType = TeamInvoiceHeaderType & {
   _id: string;
   teamId: string;
 };
+
+export interface MemberPermissionItem {
+  tmbId: string;
+  name: string;
+  avatar: string;
+  permission: {
+    value: number;
+    isOwner: boolean;
+    hasAppCreatePer: boolean;
+    hasDatasetCreatePer: boolean;
+    hasApikeyCreatePer: boolean;
+    hasTeamManagePer: boolean;
+  };
+}
+
+export interface MemberTableItemType
+  extends TeamMemberItemType<{ withOrgs: true; withPermission: true }> {
+  teamNames?: string[];
+  teamIds?: string[];
+  isOwner: boolean;
+}
+
+export interface ResourceMemberPermissionItem {
+  tmbId: string;
+  name: string;
+  avatar: string;
+  permission: {
+    value: number;
+    isOwner: boolean;
+    hasReadPer: boolean;
+    hasWritePer: boolean;
+    hasManagePer: boolean;
+  };
+}

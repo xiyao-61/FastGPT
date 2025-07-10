@@ -20,6 +20,8 @@ export type ConfigPerModalProps = {
   hasParent?: boolean;
   refetchResource?: () => void;
   onChangeOwner?: (tmbId: string) => Promise<unknown>;
+  resourceType: string;
+  resourceId: string;
 };
 
 const ConfigPerModal = ({
@@ -31,7 +33,9 @@ const ConfigPerModal = ({
   hasParent,
   onClose,
   refetchResource,
-  onChangeOwner
+  onChangeOwner,
+  resourceType,
+  resourceId
 }: ConfigPerModalProps & {
   onClose: () => void;
 }) => {
@@ -66,6 +70,8 @@ const ConfigPerModal = ({
               refetchResource={refetchResource}
               isInheritPermission={isInheritPermission}
               hasParent={hasParent}
+              resourceType={resourceType}
+              resourceId={resourceId}
             >
               {({ MemberListCard, onOpenManageModal, onOpenAddMember }) => {
                 return (

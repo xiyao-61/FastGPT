@@ -81,13 +81,17 @@ const CollaboratorContextProvider = ({
   refreshDeps = [],
   isInheritPermission,
   hasParent,
-  addPermissionOnly
+  addPermissionOnly,
+  resourceType,
+  resourceId
 }: MemberManagerInputPropsType & {
   children: (props: ChildrenProps) => ReactNode;
   refetchResource?: () => void;
   isInheritPermission?: boolean;
   hasParent?: boolean;
   addPermissionOnly?: boolean;
+  resourceType?: string;
+  resourceId?: string;
 }) => {
   const { t } = useTranslation();
   const onUpdateCollaboratorsThen = async (props: UpdateClbPermissionProps) => {
@@ -219,7 +223,8 @@ const CollaboratorContextProvider = ({
             onCloseAddMember();
             refetchResource?.();
           }}
-          addPermissionOnly={addPermissionOnly}
+          resourceType={resourceType ?? ''}
+          resourceId={resourceId ?? ''}
         />
       )}
       {isOpenManageModal && (

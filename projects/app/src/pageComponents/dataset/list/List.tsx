@@ -32,6 +32,8 @@ import { useSystem } from '@fastgpt/web/hooks/useSystem';
 import SideTag from './SideTag';
 import { getModelProvider } from '@fastgpt/global/core/ai/provider';
 import UserBox from '@fastgpt/web/components/common/UserBox';
+import MemberModal from '@/components/support/permission/MemberManager/MemberModal';
+import CollaboratorContextProvider from '@/components/support/permission/MemberManager/context';
 
 const EditResourceModal = dynamic(() => import('@/components/common/Modal/EditResourceModal'));
 
@@ -137,6 +139,8 @@ function List() {
       DeleteTipsMap.current[DatasetTypeEnum.dataset]
     )();
   };
+
+  const [showMemberModal, setShowMemberModal] = useState<{ resourceId: string } | null>(null);
 
   return (
     <>
@@ -346,7 +350,8 @@ function List() {
                                         {
                                           icon: 'key',
                                           label: t('common:permission.Permission'),
-                                          onClick: () => setEditPerDatasetId(dataset._id)
+                                          onClick: () =>
+                                            setShowMemberModal({ resourceId: dataset._id })
                                         }
                                       ]
                                     : [])
@@ -417,41 +422,32 @@ function List() {
         />
       )}
 
-      {!!editPerDataset && (
-        <ConfigPerModal
-          onChangeOwner={(tmbId: string) =>
-            postChangeOwner({
-              datasetId: editPerDataset._id,
-              ownerId: tmbId
-            }).then(() => loadMyDatasets())
-          }
-          hasParent={!!parentId}
-          refetchResource={loadMyDatasets}
-          isInheritPermission={editPerDataset.inheritPermission}
-          resumeInheritPermission={() =>
-            resumeInheritPer(editPerDataset._id).then(() => Promise.all([loadMyDatasets()]))
-          }
-          avatar={editPerDataset.avatar}
-          name={editPerDataset.name}
-          managePer={{
-            permission: editPerDataset.permission,
-            onGetCollaboratorList: () => getCollaboratorList(editPerDataset._id),
-            permissionList: DatasetPermissionList,
-            onUpdateCollaborators: (props) =>
-              postUpdateDatasetCollaborators({
-                ...props,
-                datasetId: editPerDataset._id
-              }),
-            onDelOneCollaborator: async (props) =>
-              deleteDatasetCollaborators({
-                ...props,
-                datasetId: editPerDataset._id
-              }),
-            refreshDeps: [editPerDataset._id, editPerDataset.inheritPermission]
-          }}
-          onClose={() => setEditPerDatasetId(undefined)}
-        />
-      )}
+      {!!showMemberModal &&
+        (() => {
+          const dataset = formatDatasets.find((ds) => ds._id === showMemberModal.resourceId);
+          if (!dataset) return null;
+          return (
+            <CollaboratorContextProvider
+              permission={dataset.permission}
+              permissionList={DatasetPermissionList}
+              onGetCollaboratorList={() => getCollaboratorList(showMemberModal.resourceId)}
+              onUpdateCollaborators={(props) =>
+                postUpdateDatasetCollaborators({ ...props, datasetId: showMemberModal.resourceId })
+              }
+              onDelOneCollaborator={async (props) =>
+                deleteDatasetCollaborators({ ...props, datasetId: showMemberModal.resourceId })
+              }
+            >
+              {() => (
+                <MemberModal
+                  resourceType="dataset"
+                  resourceId={showMemberModal.resourceId}
+                  onClose={() => setShowMemberModal(null)}
+                />
+              )}
+            </CollaboratorContextProvider>
+          );
+        })()}
       <ConfirmModal />
       <MoveConfirmModal />
     </>

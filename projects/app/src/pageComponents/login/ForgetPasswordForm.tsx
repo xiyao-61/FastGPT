@@ -40,25 +40,25 @@ const RegisterForm = ({ setPageType, loginSuccess }: Props) => {
 
   const { SendCodeBox } = useSendCode({ type: 'findPassword' });
 
-  const placeholder = feConfigs?.find_password_method
-    ?.map((item) => {
-      switch (item) {
-        case 'email':
-          return t('common:support.user.login.Email');
-        case 'phone':
-          return t('common:support.user.login.Phone number');
-        default:
-          return t('common:support.user.login.Username');
-      }
-    })
-    .join('/');
+  // const placeholder = feConfigs?.find_password_method
+  //   ?.map((item) => {
+  //     switch (item) {
+  //       case 'email':
+  //         return t('common:support.user.login.Email');
+  //       case 'phone':
+  //         return t('common:support.user.login.Phone number');
+  //       default:
+  //         return t('common:support.user.login.Username');
+  //     }
+  //   })
+  //   .join('/');
 
   const { runAsync: onclickFindPassword, loading: requesting } = useRequest2(
     async ({ username, code, password }: RegisterType) => {
       loginSuccess(
         await postFindPassword({
           username,
-          code,
+          // code,
           password
         })
       );
@@ -101,7 +101,7 @@ const RegisterForm = ({ setPageType, loginSuccess }: Props) => {
           <Input
             bg={'myGray.50'}
             size={'lg'}
-            placeholder={placeholder}
+            placeholder={t('common:support.user.login.Email')}
             {...register('username', {
               required: t('user:password.email_phone_void'),
               pattern: {
@@ -112,7 +112,7 @@ const RegisterForm = ({ setPageType, loginSuccess }: Props) => {
             })}
           ></Input>
         </FormControl>
-        <FormControl
+        {/* <FormControl
           mt={6}
           isInvalid={!!errors.code}
           display={'flex'}
@@ -130,7 +130,7 @@ const RegisterForm = ({ setPageType, loginSuccess }: Props) => {
             })}
           ></Input>
           <SendCodeBox username={username} />
-        </FormControl>
+        </FormControl> */}
         <FormControl mt={6} isInvalid={!!errors.password}>
           <Input
             bg={'myGray.50'}

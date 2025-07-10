@@ -104,16 +104,16 @@ export const useSystemStore = create<State>()(
         },
 
         gitStar: 20000,
-        async loadGitStar() {
-          if (!get().feConfigs?.show_git) return;
-          try {
-            const { data: git } = await axios.get('https://api.github.com/repos/labring/FastGPT');
+        // async loadGitStar() {
+        //   if (!get().feConfigs?.show_git) return;
+        //   try {
+        //     const { data: git } = await axios.get('https://api.github.com/repos/labring/FastGPT');
 
-            set((state) => {
-              state.gitStar = git.stargazers_count;
-            });
-          } catch (error) {}
-        },
+        //     set((state) => {
+        //       state.gitStar = git.stargazers_count;
+        //     });
+        //   } catch (error) {}
+        // },
 
         notSufficientModalType: undefined,
         setNotSufficientModalType(type) {
@@ -123,7 +123,9 @@ export const useSystemStore = create<State>()(
         },
 
         initDataBufferId: undefined,
-        feConfigs: {},
+        feConfigs: {
+          register_method: ['email']
+        },
         subPlans: undefined,
         systemVersion: '0.0.0',
         defaultModels: {},
@@ -141,6 +143,7 @@ export const useSystemStore = create<State>()(
             state.initDataBufferId = res.bufferId;
 
             state.feConfigs = res.feConfigs ?? state.feConfigs;
+            state.feConfigs.register_method = ['email'];
             state.subPlans = res.subPlans ?? state.subPlans;
             state.systemVersion = res.systemVersion ?? state.systemVersion;
 

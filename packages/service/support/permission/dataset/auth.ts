@@ -116,7 +116,6 @@ export const authDatasetByTmbId = async ({
       permission: Per
     };
   })();
-
   return { dataset };
 };
 

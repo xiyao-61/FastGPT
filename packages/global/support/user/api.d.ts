@@ -33,3 +33,8 @@ export type SearchResult = {
   orgs: Omit<OrgType, 'permission' | 'members'>[];
   groups: MemberGroupSchemaType[];
 };
+
+// new add
+export type PostRegisterProps = Omit<PostLoginProps, 'code'> & {
+  code?: string;
+};

@@ -1,431 +1,206 @@
-import Path from '@/components/common/folder/Path';
-import { getTeamMembers } from '@/web/support/user/team/api';
-import { getGroupList } from '@/web/support/user/team/group/api';
-import useOrg from '@/web/support/user/team/org/hooks/useOrg';
-import { useUserStore } from '@/web/support/user/useUserStore';
-import { ChevronDownIcon } from '@chakra-ui/icons';
-import { Box, Button, Flex, Grid, HStack, ModalBody, ModalFooter, Text } from '@chakra-ui/react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
-  DEFAULT_ORG_AVATAR,
-  DEFAULT_TEAM_AVATAR,
-  DEFAULT_USER_AVATAR
-} from '@fastgpt/global/common/system/constants';
-import { type UpdateClbPermissionProps } from '@fastgpt/global/support/permission/collaborator';
-import { type MemberGroupListItemType } from '@fastgpt/global/support/permission/memberGroup/type';
-import { DefaultGroupName } from '@fastgpt/global/support/user/team/group/constant';
-import { type OrgListItemType } from '@fastgpt/global/support/user/team/org/type';
-import { type TeamMemberItemType } from '@fastgpt/global/support/user/team/type';
-import MyAvatar from '@fastgpt/web/components/common/Avatar';
-import MyIcon from '@fastgpt/web/components/common/Icon';
-import SearchInput from '@fastgpt/web/components/common/Input/SearchInput';
-import MyModal from '@fastgpt/web/components/common/MyModal';
-import { useRequest2 } from '@fastgpt/web/hooks/useRequest';
-import { useScrollPagination } from '@fastgpt/web/hooks/useScrollPagination';
+  ModalBody,
+  ModalFooter,
+  Button,
+  Grid,
+  Flex,
+  Box,
+  HStack,
+  Spinner,
+  Text,
+  useToast
+} from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
-import { type ValueOf } from 'next/dist/shared/lib/constants';
-import { useMemo, useRef, useState } from 'react';
-import { useContextSelector } from 'use-context-selector';
-import { CollaboratorContext } from './context';
+import MyModal from '@fastgpt/web/components/common/MyModal';
+import SearchInput from '@fastgpt/web/components/common/Input/SearchInput';
 import MemberItemCard from './MemberItemCard';
 import PermissionSelect from './PermissionSelect';
-
-const HoverBoxStyle = {
-  bgColor: 'myGray.50',
-  cursor: 'pointer'
-};
+import {
+  getMemberResourcePermission,
+  updateMemberResourcePermission
+} from '@/web/support/user/team/api';
+import type { ResourceMemberPermissionItem } from '@fastgpt/global/support/user/team/type.d';
+import { useContextSelector } from 'use-context-selector';
+import { CollaboratorContext } from './context';
+import { useScrollPagination } from '@fastgpt/web/hooks/useScrollPagination';
 
 function MemberModal({
   onClose,
-  addPermissionOnly: addOnly = false
+  resourceType,
+  resourceId
 }: {
   onClose: () => void;
-  addPermissionOnly?: boolean;
+  resourceType: string;
+  resourceId: string;
 }) {
-  const { t } = useTranslation();
-  const { userInfo } = useUserStore();
-  const collaboratorList = useContextSelector(CollaboratorContext, (v) => v.collaboratorList);
-  const [filterClass, setFilterClass] = useState<'member' | 'org' | 'group'>();
-  const {
-    paths,
-    onClickOrg,
-    members: orgMembers,
-    MemberScrollData: OrgMemberScrollData,
-    onPathClick,
-    orgs,
-    searchKey,
-    setSearchKey
-  } = useOrg({ withPermission: false });
+  const { t: tCommon } = useTranslation('common');
+  const { t: tUser } = useTranslation('user');
+  const toast = useToast();
+  const [searchKey, setSearchKey] = useState('');
+  const [selectedMembers, setSelectedMembers] = useState<ResourceMemberPermissionItem[]>([]);
+  const [selectedPermission, setSelectedPermission] = useState<number | undefined>(undefined);
+  const [submitting, setSubmitting] = useState(false);
+  const { permissionList, getPerLabelList } = useContextSelector(CollaboratorContext, (v) => v);
 
   const {
-    data: members,
-    ScrollData: TeamMemberScrollData,
+    ScrollData,
+    isLoading,
+    data: scrollMembers,
+    total: scrollTotal,
     refreshList
-  } = useScrollPagination(getTeamMembers, {
-    pageSize: 15,
-    params: {
-      withPermission: true,
-      withOrgs: true,
-      status: 'active',
-      searchKey
-    },
-    throttleWait: 500,
-    debounceWait: 200,
-    refreshDeps: [searchKey]
-  });
-
-  const {
-    data: groups = [],
-    loading: loadingGroupsAndOrgs,
-    runAsync: refreshGroups
-  } = useRequest2(
-    async () => {
-      if (!userInfo?.team?.teamId) return [];
-      return getGroupList<false>({
-        withMembers: false,
-        searchKey
+  } = useScrollPagination(
+    (params) => {
+      const { offset = 0, pageSize = 2 } = params;
+      const _offset = Number(offset);
+      const _pageSize = Number(pageSize);
+      const pageNum = Math.floor(_offset / _pageSize) + 1;
+      return getMemberResourcePermission({
+        resourceType,
+        resourceId,
+        pageNum,
+        pageSize: _pageSize
       });
     },
     {
-      manual: false,
-      refreshDeps: [userInfo?.team?.teamId]
+      pageSize: 20,
+      params: {},
+      EmptyTip: (
+        <Box textAlign="center" color="myGray.500" py={6}>
+          {tCommon('no_data')}
+        </Box>
+      )
     }
   );
 
-  const [selectedOrgList, setSelectedOrgIdList] = useState<OrgListItemType[]>([]);
+  // 只要 permissionList 变化就设置默认权限
+  useEffect(() => {
+    if (permissionList?.read?.value !== undefined) {
+      setSelectedPermission(permissionList.read.value);
+    }
+  }, [permissionList]);
 
-  const [selectedMemberList, setSelectedMemberList] = useState<
-    Omit<TeamMemberItemType, 'permission' | 'teamId'>[]
-  >([]);
+  // 选择成员
+  const handleSelect = (member: ResourceMemberPermissionItem) => {
+    setSelectedMembers((prev) => {
+      if (prev.find((m) => m.tmbId === member.tmbId)) {
+        return prev.filter((m) => m.tmbId !== member.tmbId);
+      }
+      return [...prev, member];
+    });
+  };
 
-  const [selectedGroupList, setSelectedGroupList] = useState<MemberGroupListItemType<false>[]>([]);
-  const permissionList = useContextSelector(CollaboratorContext, (v) => v.permissionList);
-  const getPerLabelList = useContextSelector(CollaboratorContext, (v) => v.getPerLabelList);
-  const [selectedPermission, setSelectedPermission] = useState<number | undefined>(
-    permissionList?.read?.value
-  );
+  // 权限 label（多权限拼接）
   const perLabel = useMemo(() => {
     if (selectedPermission === undefined) return '';
-    return getPerLabelList(selectedPermission!).join('、');
+    return getPerLabelList ? getPerLabelList(selectedPermission).join('、') : '';
   }, [getPerLabelList, selectedPermission]);
 
-  const onUpdateCollaborators = useContextSelector(
-    CollaboratorContext,
-    (v) => v.onUpdateCollaborators
-  );
-
-  const { runAsync: onConfirm, loading: isUpdating } = useRequest2(
-    () =>
-      onUpdateCollaborators({
-        members: selectedMemberList.map((item) => item.tmbId),
-        groups: selectedGroupList.map((item) => item._id),
-        orgs: selectedOrgList.map((item) => item._id),
-        permission: addOnly ? undefined : selectedPermission!
-      } as UpdateClbPermissionProps<ValueOf<typeof addOnly>>),
-    {
-      successToast: t('common:add_success'),
-      onSuccess() {
-        onClose();
+  // 批量提交
+  const handleSubmit = async () => {
+    if (!selectedPermission || selectedMembers.length === 0) return;
+    setSubmitting(true);
+    try {
+      for (const member of selectedMembers) {
+        await updateMemberResourcePermission({
+          resourceType,
+          resourceId,
+          tmbId: member.tmbId,
+          permission: selectedPermission
+        });
       }
+      setSelectedMembers([]);
+      setSelectedPermission(undefined);
+      setSubmitting(false);
+      toast({ status: 'success', title: tCommon('action_success'), position: 'top' });
+    } finally {
+      setSubmitting(false);
+      onClose();
     }
-  );
-
-  const entryList = useRef([
-    { label: t('user:team.group.members'), icon: DEFAULT_USER_AVATAR, value: 'member' },
-    { label: t('user:team.org.org'), icon: DEFAULT_ORG_AVATAR, value: 'org' },
-    { label: t('user:team.group.group'), icon: DEFAULT_TEAM_AVATAR, value: 'group' }
-  ]);
-
-  const selectedList = useMemo(() => {
-    return [
-      ...selectedOrgList.map((item) => ({
-        id: `org-${item._id}`,
-        avatar: item.avatar,
-        name: item.name,
-        onDelete: () => setSelectedOrgIdList(selectedOrgList.filter((v) => v._id !== item._id)),
-        orgs: undefined
-      })),
-      ...selectedGroupList.map((item) => ({
-        id: `group-${item._id}`,
-        avatar: item.avatar,
-        name: item.name === DefaultGroupName ? userInfo?.team.teamName : item.name,
-        onDelete: () => setSelectedGroupList(selectedGroupList.filter((v) => v._id !== item._id)),
-        orgs: undefined
-      })),
-      ...selectedMemberList.map((item) => ({
-        id: `member-${item.tmbId}`,
-        avatar: item.avatar,
-        name: item.memberName,
-        onDelete: () =>
-          setSelectedMemberList(selectedMemberList.filter((v) => v.tmbId !== item.tmbId)),
-        orgs: item.orgs
-      }))
-    ];
-  }, [selectedOrgList, selectedGroupList, selectedMemberList, userInfo?.team.teamName]);
+  };
 
   return (
     <MyModal
       isOpen
       onClose={onClose}
-      iconSrc={addOnly ? 'keyPrimary' : 'modal/AddClb'}
-      title={addOnly ? t('user:team.add_permission') : t('user:team.add_collaborator')}
-      minW="800px"
-      maxW={'60vw'}
-      h={'100%'}
-      maxH={'90vh'}
+      title={tUser('team.resource_permission')}
+      minW={['95vw', null, '800px']}
+      maxW={['95vw', null, '800px']}
+      h={['90vh', null, '100%']}
       isCentered
-      isLoading={loadingGroupsAndOrgs}
     >
-      <ModalBody flex={'1'}>
+      <ModalBody flex={1} p={['2', '4']}>
         <Grid
           border="1px solid"
           borderColor="myGray.200"
           borderRadius="0.5rem"
-          gridTemplateColumns="1fr 1fr"
+          gridTemplateColumns={['1fr', null, '1fr 1fr']}
+          gridTemplateRows={['auto auto', null, '1fr']}
           h={'100%'}
+          gap={[4, null, 0]}
         >
+          {/* 左侧成员列表 */}
           <Flex
-            h={'100%'}
             flexDirection="column"
-            borderRight="1px solid"
+            p={[2, 4]}
+            overflowY="hidden"
+            overflowX="hidden"
+            borderRight={['none', null, '1px solid']}
+            borderRightColor={['transparent', null, 'myGray.100']}
             borderColor="myGray.200"
-            p="4"
+            h="100%"
           >
             <SearchInput
-              placeholder={t('user:search_group_org_user')}
-              bgColor="myGray.50"
+              placeholder={tUser('search_user')}
+              fontSize={['sm', null, 'sm']}
+              bg={'myGray.50'}
               onChange={(e) => setSearchKey(e.target.value)}
             />
-
-            <Flex flexDirection="column" mt="3" overflow={'auto'} flex={'1 0 0'} h={0}>
-              {/* Entry */}
-              {!searchKey && !filterClass && (
-                <>
-                  {entryList.current.map((item) => {
+            <Box mt={3} flexGrow="1" h={0} minH={0}>
+              <ScrollData style={{ height: '100%' }}>
+                {(scrollMembers as ResourceMemberPermissionItem[])
+                  .filter((m: ResourceMemberPermissionItem) =>
+                    m.name?.toLowerCase().includes(searchKey.toLowerCase())
+                  )
+                  .map((member: ResourceMemberPermissionItem) => {
+                    const isChecked =
+                      selectedMembers.find((m) => m.tmbId === member.tmbId) !== undefined;
                     return (
-                      <HStack
-                        key={item.value}
-                        justifyContent="space-between"
-                        py="2"
-                        px="3"
-                        borderRadius="sm"
-                        alignItems="center"
-                        _hover={HoverBoxStyle}
-                        _notLast={{ mb: 1 }}
-                        onClick={() => setFilterClass(item.value as any)}
-                      >
-                        <MyAvatar src={item.icon} w="1.5rem" borderRadius={'50%'} />
-                        <Box ml="2" w="full">
-                          {item.label}
-                        </Box>
-                        <MyIcon name="core/chat/chevronRight" w="16px" />
-                      </HStack>
+                      <MemberItemCard
+                        key={member.tmbId}
+                        avatar={member.avatar}
+                        name={member.name}
+                        isChecked={isChecked}
+                        onChange={() => handleSelect(member)}
+                        permission={member.permission?.value ?? 0}
+                      />
                     );
                   })}
-                </>
-              )}
-
-              {/* Path */}
-              {!searchKey && filterClass && (
-                <Box mb={1}>
-                  <Path
-                    paths={[
-                      {
-                        parentId: filterClass,
-                        parentName:
-                          filterClass === 'member'
-                            ? t('user:team.group.members')
-                            : filterClass === 'org'
-                              ? t('user:team.org.org')
-                              : t('user:team.group.group')
-                      },
-                      ...paths
-                    ]}
-                    onClick={(parentId) => {
-                      if (parentId === '') {
-                        setFilterClass(undefined);
-                        onPathClick('');
-                      } else if (
-                        parentId === 'member' ||
-                        parentId === 'org' ||
-                        parentId === 'group'
-                      ) {
-                        setFilterClass(parentId);
-                        onPathClick('');
-                      } else {
-                        onPathClick(parentId);
-                      }
-                    }}
-                    rootName={t('common:Team')}
-                  />
-                </Box>
-              )}
-              {(filterClass === 'member' || searchKey) &&
-                (() => {
-                  const Members = members?.map((member) => {
-                    const onChange = () => {
-                      setSelectedMemberList((state) => {
-                        if (state.find((v) => v.tmbId === member.tmbId)) {
-                          return state.filter((v) => v.tmbId !== member.tmbId);
-                        }
-                        return [...state, member];
-                      });
-                    };
-                    const collaborator = collaboratorList?.find((v) => v.tmbId === member.tmbId);
-                    return (
-                      <MemberItemCard
-                        addOnly={addOnly}
-                        avatar={member.avatar}
-                        key={member.tmbId}
-                        name={member.memberName}
-                        permission={collaborator?.permission.value}
-                        onChange={onChange}
-                        isChecked={!!selectedMemberList.find((v) => v.tmbId === member.tmbId)}
-                        orgs={member.orgs}
-                      />
-                    );
-                  });
-                  return searchKey ? (
-                    Members
-                  ) : (
-                    <TeamMemberScrollData
-                      flexDirection={'column'}
-                      gap={1}
-                      userSelect={'none'}
-                      height={'fit-content'}
-                    >
-                      {Members}
-                    </TeamMemberScrollData>
-                  );
-                })()}
-              {(filterClass === 'org' || searchKey) &&
-                (() => {
-                  const Orgs = orgs?.map((org) => {
-                    const onChange = () => {
-                      setSelectedOrgIdList((state) => {
-                        if (state.find((v) => v._id === org._id)) {
-                          return state.filter((v) => v._id !== org._id);
-                        }
-                        return [...state, org];
-                      });
-                    };
-                    const collaborator = collaboratorList?.find((v) => v.orgId === org._id);
-                    return (
-                      <MemberItemCard
-                        avatar={org.avatar}
-                        key={org._id}
-                        name={org.name}
-                        onChange={onChange}
-                        addOnly={addOnly}
-                        permission={collaborator?.permission.value}
-                        isChecked={!!selectedOrgList.find((v) => String(v._id) === String(org._id))}
-                        rightSlot={
-                          org.total && (
-                            <MyIcon
-                              name="core/chat/chevronRight"
-                              w="16px"
-                              p="4px"
-                              rounded={'6px'}
-                              _hover={{
-                                bgColor: 'myGray.200'
-                              }}
-                              onClick={(e) => {
-                                onClickOrg(org);
-                                // setPath(getOrgChildrenPath(org));
-                                e.stopPropagation();
-                              }}
-                            />
-                          )
-                        }
-                      />
-                    );
-                  });
-                  return searchKey ? (
-                    Orgs
-                  ) : (
-                    <OrgMemberScrollData>
-                      {Orgs}
-                      {orgMembers.map((member) => {
-                        const isChecked = !!selectedMemberList.find(
-                          (v) => v.tmbId === member.tmbId
-                        );
-                        const collaborator = collaboratorList?.find(
-                          (v) => v.tmbId === member.tmbId
-                        );
-                        return (
-                          <MemberItemCard
-                            avatar={member.avatar}
-                            key={member.tmbId}
-                            name={member.memberName}
-                            onChange={() => {
-                              setSelectedMemberList((state) => {
-                                if (state.find((v) => v.tmbId === member.tmbId)) {
-                                  return state.filter((v) => v.tmbId !== member.tmbId);
-                                }
-                                return [...state, member];
-                              });
-                            }}
-                            isChecked={isChecked}
-                            permission={collaborator?.permission.value}
-                            addOnly={addOnly && !!member.permission.value}
-                            orgs={member.orgs}
-                          />
-                        );
-                      })}
-                    </OrgMemberScrollData>
-                  );
-                })()}
-              {(filterClass === 'group' || searchKey) &&
-                groups?.map((group) => {
-                  const onChange = () => {
-                    setSelectedGroupList((state) => {
-                      if (state.find((v) => v._id === group._id)) {
-                        return state.filter((v) => v._id !== group._id);
-                      }
-                      return [...state, group];
-                    });
-                  };
-                  const collaborator = collaboratorList?.find((v) => v.groupId === group._id);
-                  return (
-                    <MemberItemCard
-                      avatar={group.avatar}
-                      key={group._id}
-                      name={
-                        group.name === DefaultGroupName ? userInfo?.team.teamName ?? '' : group.name
-                      }
-                      permission={collaborator?.permission.value}
-                      onChange={onChange}
-                      isChecked={!!selectedGroupList.find((v) => v._id === group._id)}
-                      addOnly={addOnly}
-                    />
-                  );
-                })}
-            </Flex>
-          </Flex>
-
-          <Flex h={'100%'} p="4" flexDirection="column">
-            <Box>
-              {`${t('user:has_chosen')}: `}
-              {selectedMemberList.length + selectedGroupList.length + selectedOrgList.length}
+              </ScrollData>
             </Box>
-            <Flex flexDirection="column" mt="2" gap={1} overflow={'auto'} flex={'1 0 0'} h={0}>
-              {selectedList.map((item) => {
-                return (
-                  <MemberItemCard
-                    key={item.id}
-                    avatar={item.avatar}
-                    name={item.name ?? ''}
-                    onChange={item.onDelete}
-                    onDelete={item.onDelete}
-                    orgs={item?.orgs}
-                  />
-                );
-              })}
-            </Flex>
+          </Flex>
+          {/* 右侧已选成员 */}
+          <Flex flexDirection="column" p={[2, 4]} overflowY="auto" overflowX="hidden">
+            <Box mb={2} fontWeight="bold" fontSize={['md', null, 'lg']}>
+              {tUser('has_chosen')}: {selectedMembers.length}
+            </Box>
+            <Box flexGrow={1}>
+              {selectedMembers.map((member) => (
+                <MemberItemCard
+                  key={member.tmbId}
+                  avatar={member.avatar}
+                  name={member.name}
+                  isChecked={true}
+                  onChange={() => handleSelect(member)}
+                  permission={member.permission?.value ?? 0}
+                />
+              ))}
+            </Box>
           </Flex>
         </Grid>
       </ModalBody>
       <ModalFooter>
-        {!addOnly && !!permissionList && (
+        {!!permissionList && (
           <PermissionSelect
             value={selectedPermission}
             Button={
@@ -433,26 +208,41 @@ function MemberModal({
                 alignItems={'center'}
                 bg={'myGray.50'}
                 border="base"
-                fontSize={'sm'}
+                fontSize={['sm', null, 'sm']}
                 px={3}
                 borderRadius={'md'}
                 h={'32px'}
               >
-                {t(perLabel as any)}
-                <ChevronDownIcon fontSize={'md'} />
+                {tCommon(perLabel as any)}
+                <span style={{ marginLeft: 4, display: 'flex', alignItems: 'center' }}>
+                  {/* 下拉箭头 */}
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M4.64645 6.64645C4.84171 6.45118 5.15829 6.45118 5.35355 6.64645L8 9.29289L10.6464 6.64645C10.8417 6.45118 11.1583 6.45118 11.3536 6.64645C11.5488 6.84171 11.5488 7.15829 11.3536 7.35355L8.35355 10.3536C8.15829 10.5488 7.84171 10.5488 7.64645 10.3536L4.64645 7.35355C4.45118 7.15829 4.45118 6.84171 4.64645 6.64645Z"
+                      fill="#A0AEC0"
+                    />
+                  </svg>
+                </span>
               </Flex>
             }
-            onChange={(v) => setSelectedPermission(v)}
+            onChange={setSelectedPermission}
           />
         )}
-        {addOnly && (
-          <HStack bg={'blue.50'} color={'blue.600'} padding={'6px 12px'} rounded={'5px'}>
-            <MyIcon name="common/info" w="1rem" h="1rem" />
-            <Text fontSize="12px">{t('user:permission_add_tip')}</Text>
-          </HStack>
-        )}
-        <Button isLoading={isUpdating} ml="4" h={'32px'} onClick={onConfirm}>
-          {t('common:Confirm')}
+        <Button
+          isLoading={submitting}
+          ml="4"
+          h={'32px'}
+          onClick={handleSubmit}
+          isDisabled={selectedMembers.length === 0 || !selectedPermission}
+          fontSize={['sm', null, 'md']}
+        >
+          {tCommon('Confirm')}
         </Button>
       </ModalFooter>
     </MyModal>

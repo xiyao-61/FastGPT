@@ -34,14 +34,12 @@ export const ssoLogin = (params: any) => GET<ResLogin>('/proApi/support/user/acc
 export const postRegister = ({
   username,
   password,
-  code,
   inviterId,
   bd_vid,
   fastgpt_sem
 }: AccountRegisterBody) =>
-  POST<ResLogin>(`/proApi/support/user/account/register/emailAndPhone`, {
+  POST<ResLogin>(`/support/user/account/register/emailAndPhone`, {
     username,
-    code,
     inviterId,
     bd_vid,
     fastgpt_sem,
@@ -50,16 +48,16 @@ export const postRegister = ({
 
 export const postFindPassword = ({
   username,
-  code,
+  // code,
   password
 }: {
   username: string;
-  code: string;
+  // code: string;
   password: string;
 }) =>
-  POST<ResLogin>(`/proApi/support/user/account/password/updateByCode`, {
+  POST<ResLogin>(`/support/user/account/password/update`, {
     username,
-    code,
+    // code,
     password: hashStr(password)
   });
 
@@ -117,7 +115,6 @@ export const GetSearchUserGroupOrg = (
     orgs?: boolean;
     groups?: boolean;
   }
-) =>
-  GET<SearchResult>('/proApi/support/user/search', { searchKey, ...options }, { maxQuantity: 1 });
+) => GET<SearchResult>('/support/user/search', { searchKey, ...options }, { maxQuantity: 1 });
 
 export const ExportMembers = () => GET<{ csv: string }>('/proApi/support/user/team/member/export');

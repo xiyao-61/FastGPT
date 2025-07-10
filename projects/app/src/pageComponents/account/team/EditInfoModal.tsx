@@ -124,10 +124,10 @@ function EditModal({
             })}
           />
         </Flex>
-        <Box color={'myGray.800'} fontWeight={'bold'} mt={4}>
+        {/* <Box color={'myGray.800'} fontWeight={'bold'} mt={4}>
           {t('account_team:notification_recieve')}
-        </Box>
-        <HStack w="full" justifyContent={'space-between'}>
+        </Box> */}
+        {/* <HStack w="full" justifyContent={'space-between'}>
           {(() => {
             return notificationAccount ? (
               <Box width="full">{notificationAccount}</Box>
@@ -155,7 +155,7 @@ function EditModal({
           >
             {t('common:Setting')}
           </Button>
-        </HStack>
+        </HStack> */}
       </ModalBody>
 
       <ModalFooter>

@@ -57,19 +57,22 @@ const Login = ({ ChineseRedirectUrl }: { ChineseRedirectUrl: string }) => {
   const cookieVersion = '1';
   const [localCookieVersion, setLocalCookieVersion] =
     useLocalStorageState<string>('localCookieVersion');
+  const [logoutDone, setLogoutDone] = useState(false);
 
   const loginSuccess = useCallback(
-    (res: ResLogin) => {
+    async (res: ResLogin) => {
       setUserInfo(res.user);
-
-      const decodeLastRoute = decodeURIComponent(lastRoute);
-
-      const navigateTo =
-        decodeLastRoute && !decodeLastRoute.includes('/login') && decodeLastRoute.startsWith('/')
-          ? lastRoute
-          : '/dashboard/apps';
-
-      router.push(navigateTo);
+      setTimeout(async () => {
+        const decodeLastRoute = decodeURIComponent(lastRoute);
+        const navigateTo =
+          decodeLastRoute &&
+          !decodeLastRoute.includes('/login') &&
+          !decodeLastRoute.includes('/register') &&
+          decodeLastRoute.startsWith('/')
+            ? lastRoute
+            : '/dashboard/apps';
+        router.push(navigateTo);
+      }, 500);
     },
     [setUserInfo, lastRoute, router]
   );
@@ -130,12 +133,24 @@ const Login = ({ ChineseRedirectUrl }: { ChineseRedirectUrl: string }) => {
   }, [onOpenRedirect]);
 
   useMount(() => {
-    clearToken();
+    // 只有在非登录状态下才清理 token，避免在登录过程中清除 session
+    if (!lastRoute || (lastRoute !== '/register' && lastRoute !== '/login')) {
+      clearToken().finally(() => setLogoutDone(true));
+    } else {
+      setLogoutDone(true);
+    }
     router.prefetch('/dashboard/apps');
-
     ChineseRedirectUrl && showRedirect && checkIpInChina();
     localCookieVersion !== cookieVersion && onOpenCookiesDrawer();
   });
+
+  if (!logoutDone) {
+    return (
+      <Center w="100vw" h="100vh">
+        <Loading fixed={false} />
+      </Center>
+    );
+  }
 
   return (
     <>

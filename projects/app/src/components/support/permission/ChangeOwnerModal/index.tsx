@@ -70,7 +70,7 @@ export function ChangeOwnerModal({
   });
 
   const onConfirm = async () => {
-    if (!selectedMember) {
+    if (!selectedMember || !selectedMember.tmbId) {
       return;
     }
     await runAsync(selectedMember.tmbId);
