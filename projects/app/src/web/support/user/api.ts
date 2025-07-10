@@ -36,12 +36,14 @@ export const postRegister = ({
   password,
   inviterId,
   bd_vid,
+  msclkid,
   fastgpt_sem
 }: AccountRegisterBody) =>
   POST<ResLogin>(`/support/user/account/register/emailAndPhone`, {
     username,
     inviterId,
     bd_vid,
+    msclkid,
     fastgpt_sem,
     password: hashStr(password)
   });
