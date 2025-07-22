@@ -153,6 +153,49 @@ export const removeAIResponseCite = <T extends AIChatItemValueItemType[] | strin
   }) as T;
 };
 
+// new code
+function completeImageUrlsInContent(content: string, baseUrl: string): string {
+  return content.replace(
+    /!?\[(.*?)\]\((\/api\/system\/img\/[^\)]+)\)/g,
+    (match, alt, path) => `![${alt}](${baseUrl}${path})`
+  );
+}
+
+export function completeImageUrlsDeep(
+  value: string | AIChatItemValueItemType[],
+  baseUrl: string
+): typeof value {
+  if (typeof value === 'string') {
+    return completeImageUrlsInContent(value, baseUrl);
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => {
+      // 处理 text.content
+      if (item.text?.content) {
+        return {
+          ...item,
+          text: {
+            ...item.text,
+            content: completeImageUrlsInContent(item.text.content, baseUrl)
+          }
+        };
+      }
+      // 处理 reasoning.content
+      if (item.reasoning?.content) {
+        return {
+          ...item,
+          reasoning: {
+            ...item.reasoning,
+            content: completeImageUrlsInContent(item.reasoning.content, baseUrl)
+          }
+        };
+      }
+      return item;
+    });
+  }
+  return value;
+}
+
 export const removeEmptyUserInput = (input?: UserChatItemValueItemType[]) => {
   return (
     input?.filter((item) => {

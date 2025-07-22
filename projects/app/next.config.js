@@ -12,7 +12,7 @@ const nextConfig = {
   reactStrictMode: isDev ? false : true,
   compress: true,
   typescript: {
-    ignoreBuildErrors: true
+    // ignoreBuildErrors: true
   },
   async headers() {
     return [

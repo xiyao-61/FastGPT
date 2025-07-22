@@ -85,12 +85,14 @@ function GroupEditModal({
   useEffect(() => {
     if (!groupId) return;
     setSelected(
-      groupMembers.map((item) => ({
-        name: item.memberName,
-        tmbId: item.tmbId,
-        avatar: item.avatar,
-        role: (item.groupRole ?? 'member') as `${GroupMemberRole}`
-      }))
+      groupMembers
+        .filter((item) => typeof item.tmbId === 'string')
+        .map((item) => ({
+          name: item.memberName,
+          tmbId: item.tmbId as string,
+          avatar: item.avatar,
+          role: (item.groupRole ?? 'member') as `${GroupMemberRole}`
+        }))
     );
   }, [groupId, groupMembers]);
 
@@ -150,7 +152,7 @@ function GroupEditModal({
         {
           name: member.memberName,
           avatar: member.avatar,
-          tmbId: member.tmbId,
+          tmbId: member.tmbId as string,
           role: 'member'
         }
       ]);
@@ -202,13 +204,14 @@ function GroupEditModal({
             />
             <MemberScrollData mt={3} flexGrow="1" overflow={'auto'}>
               {allMembers.map((member) => {
+                const tmbId = member.tmbId as string;
                 return (
                   <MemberItemCard
                     avatar={member.avatar}
-                    key={member.tmbId}
+                    key={tmbId}
                     name={member.memberName}
-                    onChange={() => handleToggleSelect(member.tmbId)}
-                    isChecked={!!isSelected(member.tmbId)}
+                    onChange={() => handleToggleSelect(tmbId)}
+                    isChecked={!!isSelected(tmbId)}
                     orgs={member.orgs}
                   />
                 );
@@ -219,15 +222,16 @@ function GroupEditModal({
             <Box mt={2}>{t('common:chosen') + ': ' + selected.length}</Box>
             <GroupScrollData mt={3} flex={'1 0 0'} h={0}>
               {selected.map((member) => {
+                const tmbId = member.tmbId as string;
                 return (
                   <HStack
-                    onMouseEnter={() => setHoveredMemberId(member.tmbId)}
+                    onMouseEnter={() => setHoveredMemberId(tmbId)}
                     onMouseLeave={() => setHoveredMemberId(undefined)}
                     justifyContent="space-between"
                     py="2"
                     px={3}
                     borderRadius={'md'}
-                    key={member.tmbId + member.role}
+                    key={tmbId + member.role}
                     _hover={{ bg: 'myGray.50' }}
                     _notLast={{ mb: 2 }}
                   >
@@ -254,7 +258,7 @@ function GroupEditModal({
                                   w={'1rem'}
                                   cursor={'pointer'}
                                   _hover={{ color: 'red.600' }}
-                                  onClick={() => handleToggleAdmin(member.tmbId)}
+                                  onClick={() => handleToggleAdmin(tmbId)}
                                 />
                               )}
                             </Tag>
@@ -262,12 +266,12 @@ function GroupEditModal({
                         } else if (member.role === 'member') {
                           return (
                             myRole === 'owner' &&
-                            hoveredMemberId === member.tmbId && (
+                            hoveredMemberId === tmbId && (
                               <Tag
                                 ml={2}
                                 colorSchema="yellow"
                                 cursor={'pointer'}
-                                onClick={() => handleToggleAdmin(member.tmbId)}
+                                onClick={() => handleToggleAdmin(tmbId)}
                               >
                                 {t('user:team.group.set_as_admin')}
                               </Tag>
@@ -282,7 +286,7 @@ function GroupEditModal({
                         w={'1rem'}
                         cursor={'pointer'}
                         _hover={{ color: 'red.600' }}
-                        onClick={() => handleToggleSelect(member.tmbId)}
+                        onClick={() => handleToggleSelect(tmbId)}
                       />
                     )}
                   </HStack>

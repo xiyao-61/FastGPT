@@ -52,15 +52,17 @@ const UsageTable = () => {
   } = useMultipleSelect<string>([], true);
   const tmbList = useMemo(
     () =>
-      members.map((item) => ({
-        label: (
-          <HStack spacing={1} color={'myGray.500'}>
-            <Avatar src={item.avatar} w={'1.2rem'} mr={1} rounded={'full'} />
-            <Box>{item.memberName}</Box>
-          </HStack>
-        ),
-        value: item.tmbId
-      })),
+      members
+        .filter((item) => !!item.tmbId)
+        .map((item) => ({
+          label: (
+            <HStack spacing={1} color={'myGray.500'}>
+              <Avatar src={item.avatar} w={'1.2rem'} mr={1} rounded={'full'} />
+              <Box>{item.memberName}</Box>
+            </HStack>
+          ),
+          value: item.tmbId as string
+        })),
     [members]
   );
 

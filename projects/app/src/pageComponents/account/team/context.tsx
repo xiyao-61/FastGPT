@@ -84,13 +84,15 @@ export const TeamModalContextProvider = ({ children }: { children: ReactNode }) 
   const isLoading = isLoadingTeams || isSwitchingTeam;
 
   const contextValue = {
-    myTeams,
+    myTeams: myTeams as TeamTmbItemType[],
     refetchTeams,
     isLoading,
     onSwitchTeam,
 
     // create | update team
-    setEditTeamData
+    setEditTeamData,
+    teamSize: 0,
+    refetchTeamSize: () => {}
     // teamSize: teamMemberCountData?.count || 0,
     // refetchTeamSize
   };

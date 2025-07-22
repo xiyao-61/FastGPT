@@ -22,7 +22,10 @@ const Login = () => {
       const decodeLastRoute = decodeURIComponent(lastRoute);
 
       const navigateTo =
-        decodeLastRoute && !decodeLastRoute.includes('/login') && decodeLastRoute.startsWith('/')
+        decodeLastRoute &&
+        !decodeLastRoute.includes('/login') &&
+        !decodeLastRoute.includes('/register') &&
+        decodeLastRoute.startsWith('/')
           ? lastRoute
           : '/dashboard/apps';
 
@@ -31,13 +34,19 @@ const Login = () => {
     [lastRoute, router]
   );
 
+  // useMount(() => {
+  //   // 只有在非登录状态下才清理 token，避免在登录过程中清除 session
+  //   if (!lastRoute || (lastRoute !== '/register' && lastRoute !== '/login')) {
+  //     clearToken().finally(() => setLogoutDone(true));
+  //   } else {
+  //     setLogoutDone(true);
+  //   }
+  //   router.prefetch('/dashboard/apps');
+  // });
+
   useMount(() => {
-    // 只有在非登录状态下才清理 token，避免在登录过程中清除 session
-    if (!lastRoute || (lastRoute !== '/register' && lastRoute !== '/login')) {
-      clearToken().finally(() => setLogoutDone(true));
-    } else {
-      setLogoutDone(true);
-    }
+    clearToken().finally(() => setLogoutDone(true));
+    // clearToken();
     router.prefetch('/dashboard/apps');
   });
 

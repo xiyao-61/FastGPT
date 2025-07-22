@@ -61,11 +61,13 @@ function OrgMemberManageModal({
 
   useEffect(() => {
     setSelected(
-      orgMembers.map((item) => ({
-        name: item.memberName,
-        tmbId: item.tmbId,
-        avatar: item.avatar
-      }))
+      orgMembers
+        .filter((item) => !!item.tmbId)
+        .map((item) => ({
+          name: item.memberName,
+          tmbId: item.tmbId!,
+          avatar: item.avatar
+        }))
     );
   }, [orgMembers]);
 
@@ -147,18 +149,20 @@ function OrgMemberManageModal({
               }}
             />
             <MemberScrollData mt={3} flexGrow="1" overflow={'auto'}>
-              {allMembers.map((member) => {
-                return (
-                  <MemberItemCard
-                    avatar={member.avatar}
-                    key={member.tmbId}
-                    name={member.memberName}
-                    onChange={() => handleToggleSelect(member.tmbId)}
-                    isChecked={!!isSelected(member.tmbId)}
-                    orgs={member.orgs}
-                  />
-                );
-              })}
+              {allMembers
+                .filter((member) => !!member.tmbId)
+                .map((member) => {
+                  return (
+                    <MemberItemCard
+                      avatar={member.avatar}
+                      key={member.tmbId!}
+                      name={member.memberName}
+                      onChange={() => handleToggleSelect(member.tmbId!)}
+                      isChecked={!!isSelected(member.tmbId!)}
+                      orgs={member.orgs}
+                    />
+                  );
+                })}
             </MemberScrollData>
           </Flex>
           <Flex flexDirection="column" p="4" overflowY="auto" overflowX="hidden">

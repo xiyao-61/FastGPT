@@ -50,7 +50,7 @@ https://github.com/labring/FastGPT/assets/15308462/7d3a38df-eb0e-4388-9250-2409b
    - [x] 对话工作流、插件工作流，包含基础的 RPA 节点。
    - [x] Agent 调用
    - [x] 用户交互节点
-   - [x] 双向 MCP 
+   - [x] 双向 MCP
    - [ ] 上下文管理
    - [ ] AI 生成工作流
 

@@ -31,7 +31,8 @@ import {
   filterPublicNodeResponseData,
   getChatTitleFromChatMessage,
   removeAIResponseCite,
-  removeEmptyUserInput
+  removeEmptyUserInput,
+  completeImageUrlsDeep
 } from '@fastgpt/global/core/chat/utils';
 import { updateApiKeyUsage } from '@fastgpt/service/support/openapi/tools';
 import { getUserChatInfoAndAuthTeamPoints } from '@fastgpt/service/support/permission/auth/team';
@@ -415,8 +416,20 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
         return assistantResponses;
       })();
-      const formatResponseContent = removeAIResponseCite(responseContent, retainDatasetCite);
+
+      // 动态获取协议和 host
+      const protocol =
+        (req.headers['x-forwarded-proto'] as string) ||
+        (req.headers.referer?.toString().startsWith('https') ? 'https' : 'http') ||
+        'https';
+      const host = req.headers.host;
+      const baseUrl = `${protocol}://${host}`;
+
+      let formatResponseContent = removeAIResponseCite(responseContent, retainDatasetCite);
       const error = flowResponses[flowResponses.length - 1]?.error;
+
+      // 处理图片链接
+      formatResponseContent = completeImageUrlsDeep(formatResponseContent, baseUrl);
 
       res.json({
         ...(detail ? { responseData: feResponseData, newVariables } : {}),

@@ -354,7 +354,7 @@ function MemberTable({ Tabs, selectedTeamId }: { Tabs: React.ReactNode; selected
                     <Td>
                       {member.userId !== String(userInfo?._id) &&
                         !member.isOwner &&
-                        member.username !== 'root' && (
+                        member.memberName !== 'root' && (
                           <HStack>
                             {selectedTeamId &&
                             member.teamIds &&

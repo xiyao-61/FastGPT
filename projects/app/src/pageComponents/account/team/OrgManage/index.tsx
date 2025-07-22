@@ -231,7 +231,7 @@ function OrgTable({ Tabs }: { Tabs: React.ReactNode }) {
                                         }),
                                         onClick: () => {
                                           openDeleteMemberFromTeamModal(
-                                            () => deleteMemberFromTeamReq(member.tmbId),
+                                            () => deleteMemberFromTeamReq(member.tmbId!),
                                             undefined,
                                             t('account_team:confirm_delete_from_team', {
                                               username: member.memberName
@@ -256,7 +256,7 @@ function OrgTable({ Tabs }: { Tabs: React.ReactNode }) {
                                                     if (currentOrg) {
                                                       return deleteMemberReq(
                                                         currentOrg._id,
-                                                        member.tmbId
+                                                        member.tmbId!
                                                       );
                                                     }
                                                   },

@@ -37,15 +37,17 @@ function AuditLog({ Tabs }: { Tabs: React.ReactNode }) {
   const { data: members, ScrollData } = useScrollPagination(getTeamMembers, {});
   const tmbList = useMemo(
     () =>
-      members.map((item) => ({
-        label: (
-          <HStack spacing={1} color={'myGray.500'}>
-            <Avatar src={item.avatar} w={'1.2rem'} mr={1} rounded={'full'} />
-            <Box>{item.memberName}</Box>
-          </HStack>
-        ),
-        value: item.tmbId
-      })),
+      members
+        .filter((item) => typeof item.tmbId === 'string')
+        .map((item) => ({
+          label: (
+            <HStack spacing={1} color={'myGray.500'}>
+              <Avatar src={item.avatar} w={'1.2rem'} mr={1} rounded={'full'} />
+              <Box>{item.memberName}</Box>
+            </HStack>
+          ),
+          value: item.tmbId as string
+        })),
     [members]
   );
 
@@ -83,7 +85,7 @@ function AuditLog({ Tabs }: { Tabs: React.ReactNode }) {
     isSelectAll: isSelectAllTmb,
     setIsSelectAll: setIsSelectAllTmb
   } = useMultipleSelect<string>(
-    tmbList.map((item) => item.value),
+    tmbList.map((item) => item.value as string),
     true
   );
 

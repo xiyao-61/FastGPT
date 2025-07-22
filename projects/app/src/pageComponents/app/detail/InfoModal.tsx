@@ -176,7 +176,7 @@ const InfoModal = ({ onClose }: { onClose: () => void }) => {
         />
 
         {/* role */}
-        {appDetail.permission.hasManagePer && (
+        {/* {appDetail.permission.hasManagePer && (
           <>
             {!appDetail.inheritPermission && appDetail.parentId && (
               <Box mt={3}>
@@ -237,7 +237,7 @@ const InfoModal = ({ onClose }: { onClose: () => void }) => {
               </CollaboratorContextProvider>
             </Box>
           </>
-        )}
+        )} */}
       </ModalBody>
 
       <ModalFooter>

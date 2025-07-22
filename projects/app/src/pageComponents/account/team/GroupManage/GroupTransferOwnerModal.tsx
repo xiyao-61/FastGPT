@@ -82,7 +82,7 @@ export function ChangeOwnerModal({
     if (!selectedMember) {
       return;
     }
-    await onTransfer(selectedMember.tmbId);
+    await onTransfer((selectedMember.tmbId ?? '') as string);
   };
 
   return (
@@ -141,26 +141,29 @@ export function ChangeOwnerModal({
               overflow={'auto'}
             >
               <MemberScrollData>
-                {members.map((item) => (
-                  <Box
-                    key={item.tmbId}
-                    p="2"
-                    _hover={{ bg: 'myGray.100' }}
-                    mx="1"
-                    borderRadius="md"
-                    cursor={'pointer'}
-                    onClickCapture={() => {
-                      setSearchKey(item.memberName);
-                      setSelectedMember(item);
-                      onCloseMemberListMenu();
-                    }}
-                  >
-                    <Flex align="center">
-                      <Avatar src={item.avatar} w="1.25rem" />
-                      <Box ml="2">{item.memberName}</Box>
-                    </Flex>
-                  </Box>
-                ))}
+                {members.map((item) => {
+                  const tmbId = item.tmbId as string;
+                  return (
+                    <Box
+                      key={tmbId}
+                      p="2"
+                      _hover={{ bg: 'myGray.100' }}
+                      mx="1"
+                      borderRadius="md"
+                      cursor={'pointer'}
+                      onClickCapture={() => {
+                        setSearchKey(item.memberName);
+                        setSelectedMember(item);
+                        onCloseMemberListMenu();
+                      }}
+                    >
+                      <Flex align="center">
+                        <Avatar src={item.avatar} w="1.25rem" />
+                        <Box ml="2">{item.memberName}</Box>
+                      </Flex>
+                    </Box>
+                  );
+                })}
               </MemberScrollData>
             </Flex>
           )}

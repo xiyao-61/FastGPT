@@ -34,10 +34,10 @@ async function handler(req: ApiRequestProps<any>, res: ApiResponseType<any>) {
   }
 
   const total = await MongoTeamMember.countDocuments(query);
-  let members = await MongoTeamMember.find(query)
+  let members = (await MongoTeamMember.find(query)
     .skip((pageNum - 1) * pageSize)
     .limit(pageSize)
-    .lean();
+    .lean()) as any[];
 
   members = members.map((item) => ({
     ...item,
@@ -51,20 +51,20 @@ async function handler(req: ApiRequestProps<any>, res: ApiResponseType<any>) {
       members.map(async (m) => {
         const extra: any = {};
         if (withOrgs) {
-          const orgMembers = await MongoOrgMemberModel.find({ tmbId: m._id })
+          const orgMembers = await MongoOrgMemberModel.find({ tmbId: (m as any)._id })
             .populate('org', 'name avatar')
             .lean();
-          extra.orgs = orgMembers.map((o) => ({
+          extra.orgs = orgMembers.map((o: any) => ({
             orgId: o.orgId,
-            name: o.org?.name,
-            avatar: o.org?.avatar
+            name: o.org?.name ?? '',
+            avatar: o.org?.avatar ?? ''
           }));
         }
         if (withPermission) {
           extra.permission = await getResourcePermission({
             resourceType: 'team',
             teamId,
-            tmbId: m._id
+            tmbId: (m as any)._id
           });
         }
         return { ...m, ...extra };

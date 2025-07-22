@@ -19,7 +19,7 @@ async function handler(req: ApiRequestProps<CreateTeamProps>, res: ApiResponseTy
   }
 
   // 获取当前用户信息
-  const user = await MongoUser.findById(userId);
+  const user = await MongoUser.findById(userId).lean();
   if (!user) {
     return Promise.reject('User not found');
   }
@@ -36,7 +36,7 @@ async function handler(req: ApiRequestProps<CreateTeamProps>, res: ApiResponseTy
     teamId: team._id,
     userId,
     name: user.username,
-    avatar: user.avatar || '/icon/logo.svg',
+    avatar: user?.avatar || '/icon/logo.svg',
     role: TeamMemberRoleEnum.owner,
     status: TeamMemberStatusEnum.active,
     createTime: new Date()
