@@ -113,13 +113,9 @@ export const checkTeamDatasetLimit = async (teamId: string) => {
       return Promise.reject(SystemErrEnum.licenseDatasetAmountLimit);
     }
   }
-  // Open source check
-  if (!global.feConfigs.isPlus && datasetCount >= 30) {
-    return Promise.reject(SystemErrEnum.communityVersionNumLimit);
-  }
 };
 
-export const checkTeamWebSyncPermission = async (teamId: string) => {
+export const checkTeamDatasetSyncPermission = async (teamId: string) => {
   const { standardConstants } = await getTeamStandPlan({
     teamId
   });
