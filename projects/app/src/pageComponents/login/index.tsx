@@ -78,7 +78,7 @@ const CookiesModal = () => {
               textDecorationLine={'underline'}
               cursor={'pointer'}
               w={'fit-content'}
-              onClick={() => window.open(getDocPath('/docs/agreement/privacy/'), '_blank')}
+              onClick={() => window.open(getDocPath('/docs/protocol/privacy/'), '_blank')}
             >
               {t('login:privacy_policy')}
             </Box>
@@ -208,13 +208,6 @@ export const LoginContainer = ({
 
   // initialization logic
   useEffect(() => {
-    // set page type based on configuration
-    const bd_vid = getBdVId();
-    if (bd_vid) {
-      setPageType(LoginPageTypeEnum.passwordLogin);
-      return;
-    }
-
     setPageType(
       feConfigs?.oauth?.wechat ? LoginPageTypeEnum.wechat : LoginPageTypeEnum.passwordLogin
     );
@@ -251,14 +244,8 @@ export const LoginContainer = ({
 
       <Box position="relative" w="full" h="full">
         {/* main content area */}
-        <Box w={['100%', '380px']} flex={'1 0 0'}>
-          {pageType && DynamicComponent ? (
-            DynamicComponent
-          ) : (
-            <Center w={'full'} h={'full'} position={'relative'}>
-              <Loading fixed={false} />
-            </Center>
-          )}
+        <Box w={['100%', '380px']} minH={['100vh', '600px']} flex={'1 0 0'}>
+          {pageType && DynamicComponent ? DynamicComponent : <Loading fixed={false} />}
         </Box>
 
         {/* custom content */}

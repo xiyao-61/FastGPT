@@ -717,7 +717,7 @@ const Other = ({ onOpenContact }: { onOpenContact: () => void }) => {
       <Grid gridGap={4}>
         {feConfigs?.docUrl && (
           <Link
-            href={getDocPath('/docs/intro')}
+            href={getDocPath('/docs/introduction')}
             target="_blank"
             textDecoration={'none !important'}
             {...ButtonStyles}
