@@ -46,7 +46,11 @@ import { NodeInputKeyEnum } from '@fastgpt/global/core/workflow/constants';
 import { DispatchNodeResponseKeyEnum } from '@fastgpt/global/core/workflow/runtime/constants';
 import { checkQuoteQAValue, getNodeErrResponse, getHistories } from '../utils';
 import { filterSearchResultsByMaxChars } from '../../utils';
-import { getHistoryPreview } from '@fastgpt/global/core/chat/utils';
+import {
+  getHistoryPreview,
+  getCurrentBaseUrl,
+  completeImageUrlsDeep
+} from '@fastgpt/global/core/chat/utils';
 import { computedMaxToken, llmCompletionsBodyFormat } from '../../../ai/utils';
 import { type WorkflowResponseType } from '../type';
 import { formatTime2YMDHM } from '@fastgpt/global/common/string/time';
@@ -80,6 +84,7 @@ export type ChatResponse = DispatchNodeResultType<
 export const dispatchChatCompletion = async (props: ChatProps): Promise<ChatResponse> => {
   let {
     res,
+    req,
     requestOrigin,
     stream = false,
     retainDatasetCite = true,
@@ -256,11 +261,19 @@ export const dispatchChatCompletion = async (props: ChatProps): Promise<ChatResp
           const usage = response.usage;
 
           const { content, reasoningContent } = (() => {
-            const content = response.choices?.[0]?.message?.content || '';
-            const reasoningContent: string =
+            let content = response.choices?.[0]?.message?.content || '';
+            let reasoningContent: string =
               // @ts-ignore
               response.choices?.[0]?.message?.reasoning_content || '';
 
+            // 处理图片链接
+            if (req) {
+              content = completeImageUrlsDeep(content, getCurrentBaseUrl(req)) as string;
+              reasoningContent = completeImageUrlsDeep(
+                reasoningContent,
+                getCurrentBaseUrl(req)
+              ) as string;
+            }
             // API already parse reasoning content
             if (reasoningContent || !aiChatReasoning) {
               return {

@@ -11,7 +11,7 @@ import type { DispatchNodeResponseKeyEnum } from './constants';
 import type { StoreEdgeItemType } from '../type/edge';
 import type { NodeInputKeyEnum, NodeOutputKeyEnum } from '../constants';
 import type { ClassifyQuestionAgentItemType } from '../template/system/classifyQuestion/type';
-import type { NextApiResponse } from 'next';
+import type { NextApiRequest, NextApiResponse } from 'next';
 import { UserModelSchema } from '../../../support/user/type';
 import type { AppSchema } from '../../app/type';
 import { AppDetailType } from '../../app/type';
@@ -37,6 +37,7 @@ export type ExternalProviderType = {
 /* workflow props */
 export type ChatDispatchProps = {
   res?: NextApiResponse;
+  req?: NextApiRequest;
   requestOrigin?: string;
   mode: 'test' | 'chat' | 'debug';
   timezone: string;

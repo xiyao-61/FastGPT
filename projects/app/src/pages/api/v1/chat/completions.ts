@@ -32,6 +32,7 @@ import {
   getChatTitleFromChatMessage,
   removeAIResponseCite,
   removeEmptyUserInput,
+  getCurrentBaseUrl,
   completeImageUrlsDeep
 } from '@fastgpt/global/core/chat/utils';
 import { updateApiKeyUsage } from '@fastgpt/service/support/openapi/tools';
@@ -273,6 +274,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     } = await (async () => {
       if (app.version === 'v2') {
         return dispatchWorkFlow({
+          req,
           res,
           requestOrigin: req.headers.origin,
           mode: 'chat',
@@ -375,7 +377,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     addLog.info(`completions running time: ${(Date.now() - startTime) / 1000}s`);
 
     /* select fe response field */
-    const feResponseData = responseAllData
+    let feResponseData = responseAllData
       ? flowResponses
       : filterPublicNodeResponseData({ flowResponses, responseDetail });
 
@@ -392,7 +394,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         event: detail ? SseResponseEventEnum.answer : undefined,
         data: '[DONE]'
       });
-
       if (detail) {
         workflowResponseWrite({
           event: SseResponseEventEnum.flowResponses,
@@ -417,19 +418,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         return assistantResponses;
       })();
 
-      // 动态获取协议和 host
-      const protocol =
-        (req.headers['x-forwarded-proto'] as string) ||
-        (req.headers.referer?.toString().startsWith('https') ? 'https' : 'http') ||
-        'https';
-      const host = req.headers.host;
-      const baseUrl = `${protocol}://${host}`;
-
       let formatResponseContent = removeAIResponseCite(responseContent, retainDatasetCite);
       const error = flowResponses[flowResponses.length - 1]?.error;
 
       // 处理图片链接
-      formatResponseContent = completeImageUrlsDeep(formatResponseContent, baseUrl);
+      formatResponseContent = completeImageUrlsDeep(formatResponseContent, getCurrentBaseUrl(req));
 
       res.json({
         ...(detail ? { responseData: feResponseData, newVariables } : {}),

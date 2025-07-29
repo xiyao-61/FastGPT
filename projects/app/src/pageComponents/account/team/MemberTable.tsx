@@ -53,9 +53,11 @@ import MySelect from '@fastgpt/web/components/common/MySelect';
 import { useEditTitle } from '@/web/common/hooks/useEditTitle';
 import PopoverConfirm from '@fastgpt/web/components/common/MyPopover/PopoverConfirm';
 import MyIconButton from '@fastgpt/web/components/common/Icon/button';
-
+import { postFindPassword } from '@/web/support/user/api';
+import { EditIcon } from '@chakra-ui/icons';
 const InviteModal = dynamic(() => import('./Invite/InviteModal'));
 const TeamTagModal = dynamic(() => import('@/components/support/user/team/TeamTagModal'));
+const ChangePasswordModal = dynamic(() => import('./ChangePasswordModal'));
 
 function MemberTable({ Tabs, selectedTeamId }: { Tabs: React.ReactNode; selectedTeamId?: string }) {
   const { t } = useTranslation();
@@ -178,7 +180,8 @@ function MemberTable({ Tabs, selectedTeamId }: { Tabs: React.ReactNode; selected
   //     }
   //   });
   // };
-
+  const [isOpenChangePasswordModal, setIsOpenChangePasswordModal] = useState(false);
+  const [currentUserAccount, setCurrentUserAccount] = useState('');
   const [loadingUserId, setLoadingUserId] = useState<string | null>(null);
 
   const handleAddMember = async (userId: string, memberName: string) => {
@@ -196,6 +199,12 @@ function MemberTable({ Tabs, selectedTeamId }: { Tabs: React.ReactNode; selected
     } finally {
       setLoadingUserId(null);
     }
+  };
+  const handleChangePassword = async (newPassword: string) => {
+    await postFindPassword({
+      username: currentUserAccount,
+      password: newPassword
+    });
   };
 
   return (
@@ -315,7 +324,7 @@ function MemberTable({ Tabs, selectedTeamId }: { Tabs: React.ReactNode; selected
               <Tbody>
                 {members.map((member) => (
                   <Tr key={member.userId} overflow={'unset'}>
-                    <Td>
+                    <Td maxW={'280px'}>
                       <HStack>
                         {/* <Avatar src={member.avatar} w={['18px', '22px']} borderRadius={'50%'} /> */}
                         <Box className={'textEllipsis'}>
@@ -324,6 +333,19 @@ function MemberTable({ Tabs, selectedTeamId }: { Tabs: React.ReactNode; selected
                             <Tag ml="2" colorSchema="gray" bg={'myGray.100'} color={'myGray.700'}>
                               {t('account_team:leave')}
                             </Tag>
+                          )}
+                          {(userInfo?.team?.permission?.isOwner ||
+                            userInfo?.team?.permission?.hasManagePer) && (
+                            <EditIcon
+                              boxSize={4}
+                              color="red.500"
+                              ml={1}
+                              cursor={'pointer'}
+                              onClick={() => {
+                                setCurrentUserAccount(member.memberName);
+                                setIsOpenChangePasswordModal(true);
+                              }}
+                            />
                           )}
                         </Box>
                       </HStack>
@@ -341,7 +363,7 @@ function MemberTable({ Tabs, selectedTeamId }: { Tabs: React.ReactNode; selected
                         return <OrgTags orgs={member.orgs?.map(item => item.name) || undefined} type="tag" />;
                       })()}
                     </Td> */}
-                    <Td maxW={'300px'}>
+                    <Td maxW={'200px'}>
                       <VStack gap={0} align="start">
                         <Box>{format(new Date(member.createTime), 'yyyy-MM-dd HH:mm:ss')}</Box>
                         {/* <Box>
@@ -451,6 +473,15 @@ function MemberTable({ Tabs, selectedTeamId }: { Tabs: React.ReactNode; selected
 
       {isOpenInvite && userInfo?.team?.teamId && <InviteModal onClose={onCloseInvite} />}
       {isOpenTeamTagsAsync && <TeamTagModal onClose={onCloseTeamTagsAsync} />}
+      {isOpenChangePasswordModal && (
+        <ChangePasswordModal
+          isOpen={isOpenChangePasswordModal}
+          onClose={() => setIsOpenChangePasswordModal(false)}
+          account={currentUserAccount}
+          onSubmit={handleChangePassword}
+          title="修改用户密码"
+        />
+      )}
     </>
   );
 }

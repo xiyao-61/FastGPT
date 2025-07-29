@@ -137,6 +137,7 @@ type NodeResponseCompleteType = Omit<NodeResponseType, 'responseData'> & {
 export async function dispatchWorkFlow(data: Props): Promise<DispatchFlowResponse> {
   let {
     res,
+    req,
     runtimeNodes = [],
     runtimeEdges = [],
     histories = [],
@@ -260,6 +261,7 @@ export async function dispatchWorkFlow(data: Props): Promise<DispatchFlowRespons
     }
 
     if (responseData) {
+      console.log('[dispatchWorkFlow] responseData');
       chatResponses.push(responseData);
     }
 
@@ -617,6 +619,7 @@ export async function dispatchWorkFlow(data: Props): Promise<DispatchFlowRespons
     const dispatchData: ModuleDispatchProps<Record<string, any>> = {
       ...props,
       res,
+      req,
       variables,
       histories,
       timezone,

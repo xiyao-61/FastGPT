@@ -10,6 +10,7 @@ import {
 import { sliceStrStartEnd } from '../../common/string/tools';
 import { PublishChannelEnum } from '../../support/outLink/constant';
 import { removeDatasetCiteText } from '../../../service/core/ai/utils';
+import type { NextApiRequest } from 'next';
 
 // Concat 2 -> 1, and sort by role
 export const concatHistories = (histories1: ChatItemType[], histories2: ChatItemType[]) => {
@@ -152,6 +153,17 @@ export const removeAIResponseCite = <T extends AIChatItemValueItemType[] | strin
     return item;
   }) as T;
 };
+
+export function getCurrentBaseUrl(req: NextApiRequest): string {
+  // 动态获取协议和 host
+  const protocol =
+    (req.headers['x-forwarded-proto'] as string) ||
+    (req.headers.referer?.toString().startsWith('https') ? 'https' : 'http') ||
+    'https';
+  const host = req.headers.host;
+  const baseUrl = `${protocol}://${host}`;
+  return baseUrl;
+}
 
 // new code
 function completeImageUrlsInContent(content: string, baseUrl: string): string {

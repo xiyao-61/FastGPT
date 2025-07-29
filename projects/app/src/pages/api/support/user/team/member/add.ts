@@ -43,30 +43,30 @@ async function handler(
   });
 
   // 给新成员添加对所有应用和知识库的读写权限（0b110）
-  const [apps, datasets] = await Promise.all([
-    MongoApp.find({ teamId }, '_id').lean(),
-    MongoDataset.find({ teamId }, '_id').lean()
-  ]);
-  const permissionVal = WritePermissionVal;
-  const resourcePermissions = [
-    ...apps.map((app) => ({
-      teamId,
-      tmbId: member._id,
-      resourceType: PerResourceTypeEnum.app,
-      resourceId: app._id,
-      permission: permissionVal
-    })),
-    ...datasets.map((ds) => ({
-      teamId,
-      tmbId: member._id,
-      resourceType: PerResourceTypeEnum.dataset,
-      resourceId: ds._id,
-      permission: permissionVal
-    }))
-  ];
-  if (resourcePermissions.length > 0) {
-    await MongoResourcePermission.insertMany(resourcePermissions);
-  }
+  // const [apps, datasets] = await Promise.all([
+  //   MongoApp.find({ teamId }, '_id').lean(),
+  //   MongoDataset.find({ teamId }, '_id').lean()
+  // ]);
+  // const permissionVal = WritePermissionVal;
+  // const resourcePermissions = [
+  //   ...apps.map((app) => ({
+  //     teamId,
+  //     tmbId: member._id,
+  //     resourceType: PerResourceTypeEnum.app,
+  //     resourceId: app._id,
+  //     permission: permissionVal
+  //   })),
+  //   ...datasets.map((ds) => ({
+  //     teamId,
+  //     tmbId: member._id,
+  //     resourceType: PerResourceTypeEnum.dataset,
+  //     resourceId: ds._id,
+  //     permission: permissionVal
+  //   }))
+  // ];
+  // if (resourcePermissions.length > 0) {
+  //   await MongoResourcePermission.insertMany(resourcePermissions);
+  // }
 
   return res.json({ success: true });
 }
