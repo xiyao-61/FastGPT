@@ -310,7 +310,10 @@ const CollectionChunkForm = ({ form }: { form: UseFormReturn<CollectionChunkForm
                   <QuestionTip label={t('dataset:auto_indexes_tips')} />
                 </HStack>
                 <HStack flex={'1'} spacing={1}>
-                  <MyTooltip
+                  <Checkbox isChecked={imageIndex} {...register('imageIndex')}>
+                    <FormLabel>{t('dataset:image_auto_parse')}</FormLabel>
+                  </Checkbox>
+                  {/* <MyTooltip
                     label={
                       !feConfigs?.isPlus
                         ? t('common:commercial_function_tip')
@@ -326,7 +329,7 @@ const CollectionChunkForm = ({ form }: { form: UseFormReturn<CollectionChunkForm
                     >
                       <FormLabel>{t('dataset:image_auto_parse')}</FormLabel>
                     </Checkbox>
-                  </MyTooltip>
+                  </MyTooltip> */}
                   <QuestionTip label={t('dataset:image_auto_parse_tips')} />
                 </HStack>
               </>

@@ -118,6 +118,7 @@ export const dispatchChatCompletion = async (props: ChatProps): Promise<ChatResp
       stringQuoteText //abandon
     }
   } = props;
+
   const { files: inputFiles } = chatValue2RuntimePrompt(query); // Chat box input files
 
   const modelConstantsData = getLLMModel(model);
@@ -239,7 +240,7 @@ export const dispatchChatCompletion = async (props: ChatProps): Promise<ChatResp
             };
           }
           // sse response
-          const { answer, reasoning, finish_reason, usage } = await streamResponse({
+          let { answer, reasoning, finish_reason, usage } = await streamResponse({
             res,
             stream: response,
             aiChatReasoning,
@@ -248,6 +249,13 @@ export const dispatchChatCompletion = async (props: ChatProps): Promise<ChatResp
             workflowStreamResponse,
             retainDatasetCite
           });
+
+          if (req) {
+            console.log(11);
+            console.log(req?.headers);
+            answer = completeImageUrlsDeep(answer, getCurrentBaseUrl(req)) as string;
+            reasoning = completeImageUrlsDeep(reasoning, getCurrentBaseUrl(req)) as string;
+          }
 
           return {
             answerText: answer,
@@ -268,6 +276,8 @@ export const dispatchChatCompletion = async (props: ChatProps): Promise<ChatResp
 
             // 处理图片链接
             if (req) {
+              console.log(22222);
+              console.log(req?.headers);
               content = completeImageUrlsDeep(content, getCurrentBaseUrl(req)) as string;
               reasoningContent = completeImageUrlsDeep(
                 reasoningContent,
