@@ -47,9 +47,9 @@ import { DispatchNodeResponseKeyEnum } from '@fastgpt/global/core/workflow/runti
 import { checkQuoteQAValue, getNodeErrResponse, getHistories } from '../utils';
 import { filterSearchResultsByMaxChars } from '../../utils';
 import {
-  getHistoryPreview,
-  getCurrentBaseUrl,
-  completeImageUrlsDeep
+  getHistoryPreview
+  // getCurrentBaseUrl,
+  // completeImageUrlsDeep
 } from '@fastgpt/global/core/chat/utils';
 import { computedMaxToken, llmCompletionsBodyFormat } from '../../../ai/utils';
 import { type WorkflowResponseType } from '../type';
@@ -250,12 +250,12 @@ export const dispatchChatCompletion = async (props: ChatProps): Promise<ChatResp
             retainDatasetCite
           });
 
-          if (req) {
-            console.log(11);
-            console.log(req?.headers);
-            answer = completeImageUrlsDeep(answer, getCurrentBaseUrl(req)) as string;
-            reasoning = completeImageUrlsDeep(reasoning, getCurrentBaseUrl(req)) as string;
-          }
+          // if (req) {
+          //   console.log(11);
+          //   console.log(req?.headers);
+          //   answer = completeImageUrlsDeep(answer, getCurrentBaseUrl(req)) as string;
+          //   reasoning = completeImageUrlsDeep(reasoning, getCurrentBaseUrl(req)) as string;
+          // }
 
           return {
             answerText: answer,
@@ -275,15 +275,15 @@ export const dispatchChatCompletion = async (props: ChatProps): Promise<ChatResp
               response.choices?.[0]?.message?.reasoning_content || '';
 
             // 处理图片链接
-            if (req) {
-              console.log(22222);
-              console.log(req?.headers);
-              content = completeImageUrlsDeep(content, getCurrentBaseUrl(req)) as string;
-              reasoningContent = completeImageUrlsDeep(
-                reasoningContent,
-                getCurrentBaseUrl(req)
-              ) as string;
-            }
+            // if (req) {
+            //   console.log(22222);
+            //   console.log(req?.headers);
+            //   content = completeImageUrlsDeep(content, getCurrentBaseUrl(req)) as string;
+            //   reasoningContent = completeImageUrlsDeep(
+            //     reasoningContent,
+            //     getCurrentBaseUrl(req)
+            //   ) as string;
+            // }
             // API already parse reasoning content
             if (reasoningContent || !aiChatReasoning) {
               return {

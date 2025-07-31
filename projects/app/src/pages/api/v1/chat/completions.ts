@@ -31,9 +31,9 @@ import {
   filterPublicNodeResponseData,
   getChatTitleFromChatMessage,
   removeAIResponseCite,
-  removeEmptyUserInput,
-  getCurrentBaseUrl,
-  completeImageUrlsDeep
+  removeEmptyUserInput
+  // getCurrentBaseUrl,
+  // completeImageUrlsDeep
 } from '@fastgpt/global/core/chat/utils';
 import { updateApiKeyUsage } from '@fastgpt/service/support/openapi/tools';
 import { getUserChatInfoAndAuthTeamPoints } from '@fastgpt/service/support/permission/auth/team';
@@ -422,7 +422,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       const error = flowResponses[flowResponses.length - 1]?.error;
 
       // 处理图片链接
-      formatResponseContent = completeImageUrlsDeep(formatResponseContent, getCurrentBaseUrl(req));
+      // formatResponseContent = completeImageUrlsDeep(formatResponseContent, getCurrentBaseUrl(req));
 
       res.json({
         ...(detail ? { responseData: feResponseData, newVariables } : {}),

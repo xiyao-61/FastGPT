@@ -163,7 +163,7 @@ const SliderApps = ({ apps, activeAppId }: { apps: AppListItemType[]; activeAppI
         ))}
       </MyBox>
 
-      <Box px={3} py={4}>
+      {/* <Box px={3} py={4}>
         {userInfo ? (
           <UserAvatarPopover>
             <Flex alignItems="center" gap={2} w="100%">
@@ -203,7 +203,7 @@ const SliderApps = ({ apps, activeAppId }: { apps: AppListItemType[]; activeAppI
             </Box>
           </Flex>
         )}
-      </Box>
+      </Box> */}
     </Flex>
   );
 };
