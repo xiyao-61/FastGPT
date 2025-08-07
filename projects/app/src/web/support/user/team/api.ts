@@ -91,6 +91,9 @@ export const postAddMemberToTeam = (params: {
 export const postRemoveMemberFromTeam = (params: { userId: string; teamId: string }) =>
   POST('/support/user/team/member/remove', params);
 
+export const postRemoveTeam = (params: { teamId: string }) =>
+  POST('/support/user/team/remove', params);
+
 /* -------------- team invitaionlink -------------------- */
 
 export const postCreateInvitationLink = (data: InvitationLinkCreateType) =>

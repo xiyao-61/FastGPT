@@ -2,7 +2,13 @@ import { type UserType } from '@fastgpt/global/support/user/type';
 import { MongoUser } from './schema';
 import { getTmbInfoByTmbId, getUserDefaultTeam } from './team/controller';
 import { ERROR_ENUM } from '@fastgpt/global/common/error/errorCode';
-import { createDefaultTeam } from './team/controller';
+import { MongoTeamMember } from './team/teamMemberSchema';
+import { MongoTeam } from './team/teamSchema';
+import {
+  TeamMemberRoleEnum,
+  TeamMemberStatusEnum
+} from '@fastgpt/global/support/user/team/constant';
+// import { createDefaultTeam } from './team/controller';
 
 export async function authUserExist({ userId, username }: { userId?: string; username?: string }) {
   if (userId) {
@@ -60,11 +66,23 @@ export async function createNewUser({
   username: string;
   password: string;
 }) {
+  const earliestTeam = await MongoTeam.findOne().sort({ createTime: 1 }).select('_id').lean();
+  if (!earliestTeam) return Promise.reject('没有找到root所在团队');
+
   const user = await MongoUser.create({
     username,
     password
   });
-  await createDefaultTeam({ userId: user._id });
+
+  await MongoTeamMember.create({
+    userId: user._id,
+    teamId: earliestTeam._id,
+    name: user.username,
+    role: TeamMemberRoleEnum.member,
+    status: TeamMemberStatusEnum.active,
+    createTime: new Date()
+  });
+  // await createDefaultTeam({ userId: user._id });
   return {
     _id: user._id,
     username: user.username

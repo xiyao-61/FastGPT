@@ -52,8 +52,9 @@ export const getChatHistories = (data: PaginationProps<GetHistoriesProps>) =>
 export const getChatResData = (data: getResDataQuery) =>
   GET<ChatHistoryItemResType[]>(`/core/chat/getResData`, data);
 
-export const getChatRecords = (data: getPaginationRecordsBody) =>
-  POST<getPaginationRecordsResponse>('core/chat/getPaginationRecords', data);
+export const getChatRecords = (data: getPaginationRecordsBody) => {
+  return POST<getPaginationRecordsResponse>('core/chat/getPaginationRecords', data);
+};
 
 /**
  * delete one history

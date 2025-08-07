@@ -17,7 +17,8 @@ async function handler(req: ApiRequestProps, res: ApiResponseType) {
   const result = teams.map((team: any) => ({
     teamId: String(team._id),
     teamName: team.name,
-    ownerName: ownerMap.get(String(team.ownerId)) || ''
+    ownerName: ownerMap.get(String(team.ownerId)) || '',
+    ownerId: team.ownerId
   }));
 
   return {

@@ -27,29 +27,30 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     throw new Error(AppErrEnum.unExist);
   }
 
-  // auth chat permission
-  if (chat && chat.outLinkUid !== uid) {
-    return Promise.reject(ChatErrEnum.unAuthChat);
+  let useExistingChat = chat && chat.outLinkUid === uid;
+
+  if (chat && !useExistingChat) {
+    useExistingChat = false;
   }
 
   const { nodes, chatConfig } = await getAppLatestVersion(app._id, app);
   const pluginInputs =
-    chat?.pluginInputs ??
+    (useExistingChat ? chat?.pluginInputs : null) ??
     nodes?.find((node) => node.flowNodeType === FlowNodeTypeEnum.pluginInput)?.inputs ??
     [];
 
   return {
-    chatId,
+    chatId: useExistingChat ? chatId : undefined,
     appId: app._id,
-    title: chat?.title,
+    title: useExistingChat ? chat?.title : undefined,
     userAvatar: getRandomUserAvatar(),
-    variables: chat?.variables,
+    variables: useExistingChat ? chat?.variables : undefined,
     app: {
       chatConfig: getAppChatConfig({
         chatConfig,
         systemConfigNode: getGuideModule(nodes),
-        storeVariables: chat?.variableList,
-        storeWelcomeText: chat?.welcomeText,
+        storeVariables: useExistingChat ? chat?.variableList : undefined,
+        storeWelcomeText: useExistingChat ? chat?.welcomeText : undefined,
         isPublicFetch: false
       }),
       name: app.name,

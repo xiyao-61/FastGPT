@@ -18,7 +18,9 @@ import { useScrollPagination } from '@fastgpt/web/hooks/useScrollPagination';
 import { type PaginationResponse } from '@fastgpt/web/common/fetch/type';
 import { type TeamsType } from '@fastgpt/global/support/user/team/type';
 import MyBox from '@fastgpt/web/components/common/MyBox';
+import { useRequest } from '@/web/common/hooks/useRequest';
 import EditInfoModal from '../EditInfoModal';
+import { postRemoveTeam } from '@/web/support/user/team/api';
 function TeamManage({ Tabs, onTeamCreated }: { Tabs: React.ReactNode; onTeamCreated: () => void }) {
   const { t } = useTranslation();
   const {
@@ -31,7 +33,24 @@ function TeamManage({ Tabs, onTeamCreated }: { Tabs: React.ReactNode; onTeamCrea
     throttleWait: 500,
     debounceWait: 200
   });
+  const { mutateAsync: removeDefaultTeam, isLoading: isRemoving } = useRequest({
+    mutationFn({ teamId }: { teamId: string }) {
+      return postRemoveTeam({ teamId });
+    },
+    successToast: '移除成功',
+    errorToast: '移除失败',
+    onSuccess: refetchTeamList
+  });
   const [isOpen, setIsOpen] = useState(false);
+  const [loadingTeamId, setLoadingTeamId] = useState<string | null>(null);
+  const removeTeam = async (teamId: string) => {
+    setLoadingTeamId(teamId);
+    try {
+      await removeDefaultTeam({ teamId });
+    } finally {
+      setLoadingTeamId(null);
+    }
+  };
   return (
     <Box h="100%" display="flex" flexDirection="column" minH="0">
       <Flex justify={'space-between'} align={'center'} pb={'1rem'}>
@@ -50,13 +69,27 @@ function TeamManage({ Tabs, onTeamCreated }: { Tabs: React.ReactNode; onTeamCrea
                 <Tr>
                   <Th>{t('account_team:team_name')}</Th>
                   <Th>{t('account_team:team_owner')}</Th>
+                  <Th>{t('common:Action')}</Th>
                 </Tr>
               </Thead>
               <Tbody>
-                {teams.map((team) => (
+                {teams.map((team, index) => (
                   <Tr key={team.teamId}>
                     <Td>{team.teamName}</Td>
                     <Td>{team.ownerName}</Td>
+                    <Td>
+                      {index !== 0 && (
+                        <Button
+                          size="sm"
+                          colorScheme="yellow"
+                          variant="outline"
+                          isLoading={loadingTeamId === team.teamId}
+                          onClick={() => removeTeam(team.teamId)}
+                        >
+                          {t('common:Delete')}
+                        </Button>
+                      )}
+                    </Td>
                   </Tr>
                 ))}
               </Tbody>

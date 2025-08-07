@@ -15,9 +15,11 @@ type State = {
   lastChatId: string;
   chatId: string;
   setChatId: (e?: string) => any;
+  clearChatId: () => void;
 
   outLinkAuthData: OutLinkChatAuthProps;
   setOutLinkAuthData: (e: OutLinkChatAuthProps) => any;
+  removePartialStorage: () => void;
 };
 
 const createCustomStorage = () => {
@@ -105,6 +107,12 @@ export const useChatStore = create<State>()(
             state.lastChatId = `${state.source}-${id}`;
           });
         },
+        clearChatId() {
+          set((state) => {
+            state.chatId = '';
+            state.lastChatId = '';
+          });
+        },
         lastChatAppId: '',
         setLastChatAppId(e) {
           set((state) => {
@@ -116,6 +124,10 @@ export const useChatStore = create<State>()(
           set((state) => {
             state.outLinkAuthData = e;
           });
+        },
+        removePartialStorage() {
+          sessionStorage.removeItem('chatStore');
+          localStorage.removeItem('chatStore');
         }
       })),
       {

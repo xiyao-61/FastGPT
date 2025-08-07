@@ -73,7 +73,7 @@ async function handler(
     limit: pageSize
   });
 
-  // Remove important information
+  // // Remove important information
   if (isOutLink && app.type !== AppTypeEnum.plugin) {
     histories.forEach((item) => {
       if (item.obj === ChatRoleEnum.AI) {

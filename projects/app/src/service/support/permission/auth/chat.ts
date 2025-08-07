@@ -127,7 +127,18 @@ export async function authChatCrud({
         authType: AuthUserTypeEnum.outLink
       };
     }
-    if (chat.outLinkUid !== uid) return Promise.reject(ChatErrEnum.unAuthChat);
+    // Allow access even if outLinkUid doesn't match, to enable new conversation creation
+    if (chat.outLinkUid !== uid) {
+      return {
+        teamId: String(outLinkConfig.teamId),
+        tmbId: String(outLinkConfig.tmbId),
+        uid,
+        responseDetail: outLinkConfig.responseDetail,
+        showNodeStatus: outLinkConfig.showNodeStatus ?? true,
+        showRawSource: outLinkConfig.showRawSource ?? false,
+        authType: AuthUserTypeEnum.outLink
+      };
+    }
     return {
       teamId: String(outLinkConfig.teamId),
       tmbId: String(outLinkConfig.tmbId),

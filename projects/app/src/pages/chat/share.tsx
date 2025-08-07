@@ -55,6 +55,7 @@ type Props = {
   responseDetail: boolean;
   // showFullText: boolean;
   showNodeStatus: boolean;
+  hasCheckedHistoryRef?: React.MutableRefObject<boolean>;
 };
 
 const OutLink = (props: Props) => {
@@ -94,7 +95,37 @@ const OutLink = (props: Props) => {
   const totalRecordsCount = useContextSelector(ChatRecordContext, (v) => v.totalRecordsCount);
   const isChatRecordsLoaded = useContextSelector(ChatRecordContext, (v) => v.isChatRecordsLoaded);
 
+  const histories = useContextSelector(ChatContext, (v) => v.histories);
+  const isLoading = useContextSelector(ChatContext, (v) => v.isLoading);
+
   const initSign = useRef(false);
+  const hasCheckedHistory = props.hasCheckedHistoryRef || useRef(false);
+
+  // Check if there are existing chat histories and switch to the latest one
+  useEffect(() => {
+    if (
+      !isLoading &&
+      histories.length > 0 &&
+      !hasCheckedHistory.current &&
+      !chatId &&
+      !forbidLoadChat.current
+    ) {
+      console.log('Switching to latest chat:', histories[0]);
+      hasCheckedHistory.current = true;
+      const latestChat = histories[0];
+      if (latestChat && latestChat.chatId) {
+        onChangeChatId(latestChat.chatId, true);
+      }
+    }
+
+    if (chatId && !isLoading && histories.length > 0) {
+      const chatExists = histories.some((history) => history.chatId === chatId);
+      if (!chatExists && !hasCheckedHistory.current) {
+        hasCheckedHistory.current = true;
+      }
+    }
+  }, [histories, isLoading, chatId, onChangeChatId, forbidLoadChat]);
+
   const { data, loading } = useRequest2(
     async () => {
       const shareId = outLinkAuthData.shareId;
@@ -118,12 +149,13 @@ const OutLink = (props: Props) => {
     },
     {
       manual: false,
-      refreshDeps: [shareId, outLinkAuthData, chatId],
+      refreshDeps: [shareId, outLinkAuthData, chatId, customUid],
       onFinally() {
         forbidLoadChat.current = false;
       }
     }
   );
+
   useEffect(() => {
     if (initSign.current === false && data && isChatRecordsLoaded) {
       initSign.current = true;
@@ -322,13 +354,48 @@ const Render = (props: Props) => {
   const { t } = useTranslation();
   const { toast } = useToast();
   const { shareId, authToken, customUid, appId } = props;
-  const { localUId, setLocalUId, loaded } = useShareChatStore();
-  const { source, chatId, setSource, setAppId, setOutLinkAuthData } = useChatStore();
+  const { localUId, setLocalUId, loaded, removeShareChatStore } = useShareChatStore();
+  const {
+    source,
+    chatId,
+    setSource,
+    setAppId,
+    setOutLinkAuthData,
+    removePartialStorage,
+    setChatId,
+    clearChatId
+  } = useChatStore();
   const { setUserDefaultLng } = useI18nLng();
 
+  const hasCheckedHistory = useRef(false);
+  const stableOutLinkUidRef = useRef<string>('');
+
+  const stableOutLinkUid = useMemo(() => {
+    if (authToken || customUid) {
+      return authToken || customUid;
+    }
+
+    if (!stableOutLinkUidRef.current) {
+      if (typeof window !== 'undefined') {
+        const storedUid = localStorage.getItem(`shareChat_${shareId}_uid`);
+        if (storedUid) {
+          stableOutLinkUidRef.current = storedUid;
+        } else {
+          const newUid = `shareChat_${shareId}_${getNanoid(24)}`;
+          localStorage.setItem(`shareChat_${shareId}_uid`, newUid);
+          stableOutLinkUidRef.current = newUid;
+        }
+      } else {
+        const newUid = `shareChat_${shareId}_${getNanoid(24)}`;
+        stableOutLinkUidRef.current = newUid;
+      }
+    }
+    return stableOutLinkUidRef.current;
+  }, [authToken, customUid, shareId]);
+
   const chatHistoryProviderParams = useMemo(() => {
-    return { shareId, outLinkUid: authToken || customUid || localUId || '' };
-  }, [authToken, customUid, localUId, shareId]);
+    return { shareId, outLinkUid: stableOutLinkUid };
+  }, [shareId, stableOutLinkUid]);
   const chatRecordProviderParams = useMemo(() => {
     return {
       appId,
@@ -340,18 +407,25 @@ const Render = (props: Props) => {
   }, [appId, chatHistoryProviderParams.outLinkUid, chatId, shareId]);
 
   useMount(() => {
+    removePartialStorage();
     setSource('share');
     setUserDefaultLng(true);
   });
 
-  // Set default localUId
+  // Reset chat state when customUid changes
   useEffect(() => {
-    if (loaded) {
-      if (!localUId) {
-        setLocalUId(`shareChat-${Date.now()}-${getNanoid(24)}`);
-      }
+    if (customUid) {
+      removePartialStorage();
+      clearChatId();
+      hasCheckedHistory.current = false;
     }
-  }, [loaded, localUId, setLocalUId]);
+  }, [customUid, removePartialStorage, clearChatId]);
+
+  useEffect(() => {
+    if (loaded && !localUId && !customUid && !authToken) {
+      setLocalUId(stableOutLinkUid);
+    }
+  }, [loaded, localUId, setLocalUId, customUid, authToken, stableOutLinkUid]);
 
   // Init outLinkAuthData
   useEffect(() => {
@@ -389,7 +463,7 @@ const Render = (props: Props) => {
         showNodeStatus={props.showNodeStatus}
       >
         <ChatRecordContextProvider params={chatRecordProviderParams}>
-          <OutLink {...props} />
+          <OutLink {...props} hasCheckedHistoryRef={hasCheckedHistory} />
         </ChatRecordContextProvider>
       </ChatItemContextProvider>
     </ChatContextProvider>
