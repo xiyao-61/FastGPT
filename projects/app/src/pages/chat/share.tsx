@@ -408,9 +408,15 @@ const Render = (props: Props) => {
 
   useMount(() => {
     removePartialStorage();
-    setSource('share');
+    // setSource('share');
     setUserDefaultLng(true);
   });
+
+  useEffect(() => {
+    useChatStore.setState((state) => {
+      state.source = 'share';
+    });
+  }, []);
 
   // Reset chat state when customUid changes
   useEffect(() => {

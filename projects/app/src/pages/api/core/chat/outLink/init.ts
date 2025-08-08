@@ -17,16 +17,41 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   // auth link permission
   const { uid, appId } = await authOutLink({ shareId, outLinkUid });
 
-  // auth app permission
-  const [chat, app] = await Promise.all([
-    MongoChat.findOne({ appId, chatId, shareId }).lean(),
-    MongoApp.findById(appId).lean()
-  ]);
+  const app = await MongoApp.findById(appId).lean();
 
   if (!app) {
     throw new Error(AppErrEnum.unExist);
   }
 
+  if (!chatId) {
+    const { nodes, chatConfig } = await getAppLatestVersion(app._id, app);
+    const pluginInputs =
+      nodes?.find((node) => node.flowNodeType === FlowNodeTypeEnum.pluginInput)?.inputs ?? [];
+
+    return {
+      chatId: undefined,
+      appId: app._id,
+      title: undefined,
+      userAvatar: getRandomUserAvatar(),
+      variables: undefined,
+      app: {
+        chatConfig: getAppChatConfig({
+          chatConfig,
+          systemConfigNode: getGuideModule(nodes),
+          storeVariables: undefined,
+          storeWelcomeText: undefined,
+          isPublicFetch: false
+        }),
+        name: app.name,
+        avatar: app.avatar,
+        intro: app.intro,
+        type: app.type,
+        pluginInputs
+      }
+    };
+  }
+
+  const chat = await MongoChat.findOne({ appId, chatId, shareId }).lean();
   let useExistingChat = chat && chat.outLinkUid === uid;
 
   if (chat && !useExistingChat) {
