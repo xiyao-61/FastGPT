@@ -104,11 +104,24 @@ const RegisterForm = ({ setPageType, loginSuccess }: Props) => {
             placeholder={t('common:support.user.login.Email')}
             {...register('username', {
               required: t('user:password.email_phone_void'),
-              pattern: {
-                value:
-                  /(^1[3456789]\d{9}$)|(^[A-Za-z0-9]+([_\.][A-Za-z0-9]+)*@([A-Za-z0-9\-]+\.)+[A-Za-z]{2,6}$)/,
-                message: t('user:password.email_phone_error')
+              validate: (val) => {
+                // 如果是root用户，跳过邮箱格式校验
+                if (val?.trim() === 'root') {
+                  return true;
+                }
+                // 其他用户必须符合邮箱或手机号格式
+                const emailPhoneRegex =
+                  /(^1[3456789]\d{9}$)|(^[A-Za-z0-9]+([_\.][A-Za-z0-9]+)*@([A-Za-z0-9\-]+\.)+[A-Za-z]{2,6}$)/;
+                if (!emailPhoneRegex.test(val)) {
+                  return t('user:password.email_phone_error');
+                }
+                return true;
               }
+              // pattern: {
+              //   value:
+              //     /(^1[3456789]\d{9}$)|(^[A-Za-z0-9]+([_\.][A-Za-z0-9]+)*@([A-Za-z0-9\-]+\.)+[A-Za-z]{2,6}$)/,
+              //   message: t('user:password.email_phone_error')
+              // }
             })}
           ></Input>
         </FormControl>
