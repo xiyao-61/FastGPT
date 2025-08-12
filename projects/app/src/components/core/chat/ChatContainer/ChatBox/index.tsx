@@ -1101,7 +1101,7 @@ const ChatBox = ({
       h={'100%'}
       position={'relative'}
     >
-      <Script src={getWebReqUrl('/js/html2pdf.bundle.min.js')} strategy="lazyOnload"></Script>
+      {/* <Script src={getWebReqUrl('/js/html2pdf.bundle.min.js')} strategy="lazyOnload"></Script> */}
       {/* chat box container */}
       {RenderRecords}
       {/* message input */}

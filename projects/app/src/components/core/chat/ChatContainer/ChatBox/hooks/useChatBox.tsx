@@ -4,6 +4,7 @@ import { useCallback } from 'react';
 import { htmlTemplate } from '@/web/core/chat/constants';
 import { fileDownload } from '@/web/common/file/utils';
 import { ChatItemValueTypeEnum } from '@fastgpt/global/core/chat/constants';
+import { getWebReqUrl } from '@fastgpt/web/common/system/utils';
 import { useTranslation } from 'next-i18next';
 export const useChatBox = () => {
   const { t } = useTranslation();
@@ -78,15 +79,37 @@ ${JSON.stringify(item.tools, null, 2)}
               filename: `${t('chat:chat_history')}.html`
             });
         },
-        pdf: () => {
+        pdf: async () => {
           const html = getHistoryHtml();
 
-          html &&
-            // @ts-ignore
-            html2pdf(html, {
-              margin: 0,
-              filename: `${t('chat:chat_history')}.pdf`
-            });
+          // html &&
+          //   // @ts-ignore
+          //   html2pdf(html, {
+          //     margin: 0,
+          //     filename: `${t('chat:chat_history')}.pdf`
+          //   });
+          if (html) {
+            try {
+              // 动态加载 html2pdf.bundle.min.js
+              if (typeof window !== 'undefined' && !(window as any).html2pdf) {
+                await new Promise<void>((resolve, reject) => {
+                  const script = document.createElement('script');
+                  script.src = getWebReqUrl('/js/html2pdf.bundle.min.js');
+                  script.onload = () => resolve();
+                  script.onerror = reject;
+                  document.head.appendChild(script);
+                });
+              }
+
+              // 使用全局的 html2pdf
+              (window as any).html2pdf(html, {
+                margin: 0,
+                filename: `${t('chat:chat_history')}.pdf`
+              });
+            } catch (error) {
+              console.error('Failed to load html2pdf:', error);
+            }
+          }
         }
       };
 

@@ -250,13 +250,6 @@ export const dispatchChatCompletion = async (props: ChatProps): Promise<ChatResp
             retainDatasetCite
           });
 
-          // if (req) {
-          //   console.log(11);
-          //   console.log(req?.headers);
-          //   answer = completeImageUrlsDeep(answer, getCurrentBaseUrl(req)) as string;
-          //   reasoning = completeImageUrlsDeep(reasoning, getCurrentBaseUrl(req)) as string;
-          // }
-
           return {
             answerText: answer,
             reasoningText: reasoning,
@@ -274,16 +267,6 @@ export const dispatchChatCompletion = async (props: ChatProps): Promise<ChatResp
               // @ts-ignore
               response.choices?.[0]?.message?.reasoning_content || '';
 
-            // 处理图片链接
-            // if (req) {
-            //   console.log(22222);
-            //   console.log(req?.headers);
-            //   content = completeImageUrlsDeep(content, getCurrentBaseUrl(req)) as string;
-            //   reasoningContent = completeImageUrlsDeep(
-            //     reasoningContent,
-            //     getCurrentBaseUrl(req)
-            //   ) as string;
-            // }
             // API already parse reasoning content
             if (reasoningContent || !aiChatReasoning) {
               return {

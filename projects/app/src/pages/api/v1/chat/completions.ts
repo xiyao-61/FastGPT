@@ -263,6 +263,27 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       showNodeStatus
     });
 
+    // const baseUrl = getCurrentBaseUrl(req);
+    // const workflowStreamResponseWithImg = ({
+    //   write,
+    //   event,
+    //   data
+    // }: {
+    //   write?: (text: string) => void;
+    //   event: SseResponseEventEnum;
+    //   data: any;
+    // }) => {
+    //   const d = { ...data };
+    //   const delta = d?.choices?.[0]?.delta;
+    //   if (delta?.content) {
+    //     delta.content = completeImageUrlsDeep(delta.content, baseUrl) as string;
+    //   }
+    //   if (delta?.reasoning_content) {
+    //     delta.reasoning_content = completeImageUrlsDeep(delta.reasoning_content, baseUrl) as string;
+    //   }
+    //   workflowResponseWrite({ write, event, data: d });
+    // };
+
     /* start flow controller */
     const {
       flowResponses,
@@ -304,6 +325,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           stream,
           retainDatasetCite,
           maxRunTimes: WORKFLOW_MAX_RUN_TIMES,
+          // workflowStreamResponse: workflowStreamResponseWithImg,
           workflowStreamResponse: workflowResponseWrite
         });
       }
