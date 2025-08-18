@@ -16,9 +16,9 @@ export async function initRootUser(retry = 3): Promise<any> {
     await mongoSessionRun(async (session) => {
       // init root user
       if (rootUser) {
-        await rootUser.updateOne({
-          password: hashStr(psw)
-        });
+        // await rootUser.updateOne({
+        //   password: hashStr(psw)
+        // });
       } else {
         const [{ _id }] = await MongoUser.create(
           [

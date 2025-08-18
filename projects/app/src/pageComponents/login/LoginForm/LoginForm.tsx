@@ -156,14 +156,14 @@ const LoginForm = ({ setPageType, loginSuccess }: Props) => {
           color={'primary.700'}
           fontWeight={'medium'}
         >
-          <Box
+          {/* <Box
             cursor={'pointer'}
             _hover={{ textDecoration: 'underline' }}
             onClick={() => setPageType('forgetPassword')}
             fontSize="mini"
           >
             {t('login:forget_password')}
-          </Box>
+          </Box> */}
           {/* {feConfigs?.find_password_method && feConfigs.find_password_method.length > 0 && (
             <Box
               cursor={'pointer'}
@@ -176,7 +176,7 @@ const LoginForm = ({ setPageType, loginSuccess }: Props) => {
           )} */}
           {feConfigs?.register_method && feConfigs.register_method.length > 0 && (
             <Flex alignItems={'center'}>
-              <Box mx={3} h={'12px'} w={'1px'} bg={'myGray.250'}></Box>
+              {/* <Box mx={3} h={'12px'} w={'1px'} bg={'myGray.250'}></Box> */}
               <Box
                 cursor={'pointer'}
                 _hover={{ textDecoration: 'underline' }}
