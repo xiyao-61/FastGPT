@@ -1,14 +1,18 @@
 import { type PerConstructPros, Permission } from '../controller';
 import {
-  TeamApikeyCreatePermissionVal,
-  TeamAppCreatePermissionVal,
-  TeamDatasetCreatePermissionVal,
-  TeamDefaultPermissionVal,
-  TeamPermissionList,
-  TeamManagePermissionVal
+  TeamApikeyCreateRoleVal,
+  TeamAppCreateRoleVal,
+  TeamDatasetCreateRoleVal,
+  TeamDefaultRoleVal,
+  TeamPerList,
+  TeamRoleList,
+  TeamRolePerMap
 } from './constant';
 
 export class TeamPermission extends Permission {
+  hasAppCreateRole: boolean = false;
+  hasDatasetCreateRole: boolean = false;
+  hasApikeyCreateRole: boolean = false;
   hasAppCreatePer: boolean = false;
   hasDatasetCreatePer: boolean = false;
   hasApikeyCreatePer: boolean = false;
@@ -17,19 +21,23 @@ export class TeamPermission extends Permission {
   constructor(props?: PerConstructPros) {
     if (!props) {
       props = {
-        per: TeamDefaultPermissionVal
+        role: TeamDefaultRoleVal
       };
-    } else if (props?.per === undefined) {
-      props.per = TeamDefaultPermissionVal;
+    } else if (!props?.role) {
+      props.role = TeamDefaultRoleVal;
     }
-    props.permissionList = TeamPermissionList;
+    props.roleList = TeamRoleList;
+    props.rolePerMap = TeamRolePerMap;
+    props.perList = TeamPerList;
     super(props);
 
     this.setUpdatePermissionCallback(() => {
-      this.hasAppCreatePer = this.checkPer(TeamAppCreatePermissionVal);
-      this.hasDatasetCreatePer = this.checkPer(TeamDatasetCreatePermissionVal);
-      this.hasApikeyCreatePer = this.checkPer(TeamApikeyCreatePermissionVal);
-      this.hasTeamManagePer = this.checkPer(TeamManagePermissionVal);
+      this.hasAppCreateRole = this.checkRole(TeamAppCreateRoleVal);
+      this.hasDatasetCreateRole = this.checkRole(TeamDatasetCreateRoleVal);
+      this.hasApikeyCreateRole = this.checkRole(TeamApikeyCreateRoleVal);
+      this.hasAppCreatePer = this.checkPer(TeamAppCreateRoleVal);
+      this.hasDatasetCreatePer = this.checkPer(TeamDatasetCreateRoleVal);
+      this.hasApikeyCreatePer = this.checkPer(TeamApikeyCreateRoleVal);
     });
   }
 }

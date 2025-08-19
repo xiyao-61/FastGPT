@@ -1,5 +1,4 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { postChangeOwner, resumeInheritPer } from '@/web/core/dataset/api';
 import { Box, Flex, Grid, HStack } from '@chakra-ui/react';
 import { DatasetTypeEnum, DatasetTypeMap } from '@fastgpt/global/core/dataset/constants';
 import MyMenu from '@fastgpt/web/components/common/MyMenu';
@@ -17,8 +16,7 @@ import MyTooltip from '@fastgpt/web/components/common/MyTooltip';
 import dynamic from 'next/dynamic';
 import { useContextSelector } from 'use-context-selector';
 import { DatasetsContext } from '../../../pages/dataset/list/context';
-import { DatasetPermissionList } from '@fastgpt/global/support/permission/dataset/constant';
-import ConfigPerModal from '@/components/support/permission/ConfigPerModal';
+import { DatasetRoleList } from '@fastgpt/global/support/permission/dataset/constant';
 import {
   deleteDatasetCollaborators,
   getCollaboratorList,
@@ -53,7 +51,7 @@ function List() {
     folderDetail,
     setSearchKey
   } = useContextSelector(DatasetsContext, (v) => v);
-  const [editPerDatasetId, setEditPerDatasetId] = useState<string>();
+  // Using MemberModal for collaborator management
   const router = useRouter();
   const { parentId = null } = router.query as { parentId?: string | null };
   const parentDataset = useMemo(
@@ -83,10 +81,7 @@ function List() {
     }
   });
 
-  const editPerDataset = useMemo(
-    () => myDatasets.find((item) => String(item._id) === String(editPerDatasetId)),
-    [editPerDatasetId, myDatasets]
-  );
+  // Removed ConfigPerModal flow and related state
 
   const { mutate: exportDataset } = useRequest({
     mutationFn: async (dataset: DatasetItemType) => {
@@ -230,7 +225,7 @@ function List() {
                     </Box>
 
                     {dataset.type !== DatasetTypeEnum.folder && (
-                      <Box flexShrink={0} ml={2}>
+                      <Box flexShrink={0} mr={-5}>
                         <SideTag
                           type={dataset.type}
                           py={0.5}
@@ -429,7 +424,7 @@ function List() {
           return (
             <CollaboratorContextProvider
               permission={dataset.permission}
-              permissionList={DatasetPermissionList}
+              roleList={DatasetRoleList}
               onGetCollaboratorList={() => getCollaboratorList(showMemberModal.resourceId)}
               onUpdateCollaborators={(props) =>
                 postUpdateDatasetCollaborators({ ...props, datasetId: showMemberModal.resourceId })

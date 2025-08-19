@@ -23,13 +23,20 @@ import type { RuntimeEdgeItemType, RuntimeNodeItemType } from './type';
 export const extractDeepestInteractive = (
   interactive: WorkflowInteractiveResponseType
 ): WorkflowInteractiveResponseType => {
-  if (
-    (interactive?.type === 'childrenInteractive' || interactive?.type === 'loopInteractive') &&
-    interactive.params?.childrenResponse
+  const MAX_DEPTH = 100;
+  let current = interactive;
+  let depth = 0;
+
+  while (
+    depth < MAX_DEPTH &&
+    (current?.type === 'childrenInteractive' || current?.type === 'loopInteractive') &&
+    current.params?.childrenResponse
   ) {
-    return extractDeepestInteractive(interactive.params.childrenResponse);
+    current = current.params.childrenResponse;
+    depth++;
   }
-  return interactive;
+
+  return current;
 };
 export const getMaxHistoryLimitFromNodes = (nodes: StoreNodeItemType[]): number => {
   let limit = 10;
@@ -87,6 +94,7 @@ export const valueTypeFormat = (value: any, type?: WorkflowIOValueTypeEnum) => {
     return typeof value === 'object' ? JSON.stringify(value) : String(value);
   }
   if (type === WorkflowIOValueTypeEnum.number) {
+    if (value === '') return undefined;
     return Number(value);
   }
   if (type === WorkflowIOValueTypeEnum.boolean) {
@@ -244,6 +252,7 @@ export const storeNodes2RuntimeNodes = (
         name: node.name,
         avatar: node.avatar,
         intro: node.intro,
+        toolDescription: node.toolDescription,
         flowNodeType: node.flowNodeType,
         showStatus: node.showStatus,
         isEntry: entryNodeIds.includes(node.nodeId),
@@ -293,22 +302,42 @@ export const checkNodeRunStatus = ({
     const commonEdges: RuntimeEdgeItemType[] = [];
     const recursiveEdges: RuntimeEdgeItemType[] = [];
 
-    const checkIsCircular = (edge: RuntimeEdgeItemType, visited: Set<string>): boolean => {
-      if (edge.source === currentNode.nodeId) {
-        return true; // 检测到环,并且环中包含当前节点
-      }
-      if (visited.has(edge.source)) {
-        return false; // 检测到环,但不包含当前节点(子节点成环)
-      }
-      visited.add(edge.source);
+    const checkIsCircular = (startEdge: RuntimeEdgeItemType, initialVisited: string[]): boolean => {
+      const stack: Array<{ edge: RuntimeEdgeItemType; visited: Set<string> }> = [
+        { edge: startEdge, visited: new Set(initialVisited) }
+      ];
 
-      // 递归检测后面的 edge，如果有其中一个成环，则返回 true
-      const nextEdges = allEdges.filter((item) => item.target === edge.source);
-      return nextEdges.some((nextEdge) => checkIsCircular(nextEdge, new Set(visited)));
+      const MAX_DEPTH = 3000;
+      let iterations = 0;
+
+      while (stack.length > 0 && iterations < MAX_DEPTH) {
+        iterations++;
+
+        const { edge, visited } = stack.pop()!;
+
+        if (edge.source === currentNode.nodeId) {
+          return true; // 检测到环,并且环中包含当前节点
+        }
+
+        if (visited.has(edge.source)) {
+          continue; // 已访问过此节点，跳过（避免子环干扰）
+        }
+
+        const newVisited = new Set(visited);
+        newVisited.add(edge.source);
+
+        // 查找目标节点的 source edges 并加入栈中
+        const nextEdges = allEdges.filter((item) => item.target === edge.source);
+        for (const nextEdge of nextEdges) {
+          stack.push({ edge: nextEdge, visited: newVisited });
+        }
+      }
+
+      return false;
     };
 
     sourceEdges.forEach((edge) => {
-      if (checkIsCircular(edge, new Set([currentNode.nodeId]))) {
+      if (checkIsCircular(edge, [currentNode.nodeId])) {
         recursiveEdges.push(edge);
       } else {
         commonEdges.push(edge);
@@ -439,27 +468,63 @@ export const formatVariableValByType = (val: any, valueType?: WorkflowIOValueTyp
 
   return val;
 };
+
 // replace {{$xx.xx$}} variables for text
 export function replaceEditorVariable({
   text,
   nodes,
-  variables
+  variables,
+  depth = 0
 }: {
   text: any;
   nodes: RuntimeNodeItemType[];
   variables: Record<string, any>; // global variables
+  depth?: number;
 }) {
   if (typeof text !== 'string') return text;
+  if (text === '') return text;
+
+  const MAX_REPLACEMENT_DEPTH = 10;
+  const processedVariables = new Set<string>();
+
+  // Prevent infinite recursion
+  if (depth > MAX_REPLACEMENT_DEPTH) {
+    return text;
+  }
 
   text = replaceVariable(text, variables);
+
+  // Check for circular references in variable values
+  const hasCircularReference = (value: any, targetKey: string): boolean => {
+    if (typeof value !== 'string') return false;
+
+    // Check if the value contains the target variable pattern (direct self-reference)
+    const selfRefPattern = new RegExp(
+      `\\{\\{\\$${targetKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\$\\}\\}`,
+      'g'
+    );
+    return selfRefPattern.test(value);
+  };
 
   const variablePattern = /\{\{\$([^.]+)\.([^$]+)\$\}\}/g;
   const matches = [...text.matchAll(variablePattern)];
   if (matches.length === 0) return text;
 
-  matches.forEach((match) => {
+  let result = text;
+  let hasReplacements = false;
+
+  // Build replacement map first to avoid modifying string during iteration
+  const replacements: Array<{ pattern: string; replacement: string }> = [];
+
+  for (const match of matches) {
     const nodeId = match[1];
     const id = match[2];
+    const variableKey = `${nodeId}.${id}`;
+
+    // Skip if already processed to avoid immediate circular reference
+    if (processedVariables.has(variableKey)) {
+      continue;
+    }
 
     const variableVal = (() => {
       if (nodeId === VARIABLE_NODE_ID) {
@@ -477,13 +542,35 @@ export function replaceEditorVariable({
       if (input) return getReferenceVariableValue({ value: input.value, nodes, variables });
     })();
 
-    const formatVal = valToStr(variableVal);
+    // Check for direct circular reference
+    if (hasCircularReference(String(variableVal), variableKey)) {
+      continue;
+    }
 
-    const regex = new RegExp(`\\{\\{\\$(${nodeId}\\.${id})\\$\\}\\}`, 'g');
-    text = text.replace(regex, () => formatVal);
+    const formatVal = valToStr(variableVal);
+    const escapedNodeId = nodeId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escapedId = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    replacements.push({
+      pattern: `\\{\\{\\$(${escapedNodeId}\\.${escapedId})\\$\\}\\}`,
+      replacement: formatVal
+    });
+
+    processedVariables.add(variableKey);
+    hasReplacements = true;
+  }
+
+  // Apply all replacements
+  replacements.forEach(({ pattern, replacement }) => {
+    result = result.replace(new RegExp(pattern, 'g'), replacement);
   });
 
-  return text || '';
+  // If we made replacements and there might be nested variables, recursively process
+  if (hasReplacements && /\{\{\$[^.]+\.[^$]+\$\}\}/.test(result)) {
+    result = replaceEditorVariable({ text: result, nodes, variables, depth: depth + 1 });
+  }
+
+  return result || '';
 }
 
 export const textAdaptGptResponse = ({

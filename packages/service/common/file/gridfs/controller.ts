@@ -79,6 +79,8 @@ export async function uploadFile({
       .pipe(stream as any)
       .on('finish', resolve)
       .on('error', reject);
+  }).finally(() => {
+    readStream.destroy();
   });
 
   return String(stream.id);
@@ -148,10 +150,6 @@ export async function getFileById({
   const file = await db.findOne<DatasetFileSchema>({
     _id: new Types.ObjectId(fileId)
   });
-
-  // if (!file) {
-  //   return Promise.reject('File not found');
-  // }
 
   return file || undefined;
 }

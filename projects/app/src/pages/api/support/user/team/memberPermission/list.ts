@@ -3,9 +3,18 @@ import { NextAPI } from '@/service/middleware/entry';
 import { parseHeaderCert } from '@fastgpt/service/support/permission/controller';
 import { MongoTeamMember } from '@fastgpt/service/support/user/team/teamMemberSchema';
 import { getResourcePermission } from '@fastgpt/service/support/permission/controller';
-import { PerResourceTypeEnum, NullPermission } from '@fastgpt/global/support/permission/constant';
-import { TeamPermission } from '@fastgpt/global/support/permission/user/controller';
-import { TeamDefaultPermissionVal } from '@fastgpt/global/support/permission/user/constant';
+import {
+  PerResourceTypeEnum,
+  OwnerPermissionVal,
+  NullPermissionVal
+} from '@fastgpt/global/support/permission/constant';
+import { TeamMemberRoleEnum } from '@fastgpt/global/support/user/team/constant';
+import {
+  TeamAppCreatePermissionVal,
+  TeamDatasetCreatePermissionVal,
+  TeamApikeyCreatePermissionVal,
+  TeamManagePermissionVal
+} from '@fastgpt/global/support/permission/user/constant';
 
 async function handler(req: ApiRequestProps, res: ApiResponseType) {
   const { teamId } = await parseHeaderCert({ req, authToken: true });
@@ -20,26 +29,34 @@ async function handler(req: ApiRequestProps, res: ApiResponseType) {
 
   const list = await Promise.all(
     members.map(async (member) => {
-      const per = await getResourcePermission({
-        resourceType: PerResourceTypeEnum.team,
-        teamId: member.teamId,
-        tmbId: member._id
-      });
-      const permission = new TeamPermission({
-        per: per ?? NullPermission,
-        isOwner: member.role === 'owner'
-      });
+      const isOwner = member.role === TeamMemberRoleEnum.owner;
+
+      let value;
+      if (isOwner) {
+        value = OwnerPermissionVal;
+      } else {
+        const per = await getResourcePermission({
+          resourceType: PerResourceTypeEnum.team,
+          teamId: member.teamId,
+          tmbId: member._id
+        });
+        value = per ?? NullPermissionVal; // 权限表里查不到就是无权限
+      }
+
       return {
         tmbId: String(member._id),
         name: (member as any)?.user?.username || member.name,
         avatar: member.avatar,
         permission: {
-          value: permission.value,
-          isOwner: permission.isOwner,
-          hasAppCreatePer: permission.hasAppCreatePer,
-          hasDatasetCreatePer: permission.hasDatasetCreatePer,
-          hasApikeyCreatePer: permission.hasApikeyCreatePer,
-          hasTeamManagePer: permission.hasTeamManagePer
+          value,
+          isOwner,
+          hasAppCreatePer:
+            isOwner || (value & TeamAppCreatePermissionVal) === TeamAppCreatePermissionVal,
+          hasDatasetCreatePer:
+            isOwner || (value & TeamDatasetCreatePermissionVal) === TeamDatasetCreatePermissionVal,
+          hasApikeyCreatePer:
+            isOwner || (value & TeamApikeyCreatePermissionVal) === TeamApikeyCreatePermissionVal,
+          hasTeamManagePer: isOwner || (value & TeamManagePermissionVal) === TeamManagePermissionVal
         }
       };
     })

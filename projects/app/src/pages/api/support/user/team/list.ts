@@ -5,10 +5,9 @@ import { TeamMemberStatusEnum } from '@fastgpt/global/support/user/team/constant
 import { parseHeaderCert } from '@fastgpt/service/support/permission/controller';
 import { getResourcePermission } from '@fastgpt/service/support/permission/controller';
 import { PerResourceTypeEnum } from '@fastgpt/global/support/permission/constant';
-import { TeamPermission } from '@fastgpt/global/support/permission/user/controller';
-import { TeamDefaultPermissionVal } from '@fastgpt/global/support/permission/user/constant';
+import { TeamManagePermissionVal } from '@fastgpt/global/support/permission/user/constant';
 import { TeamMemberRoleEnum } from '@fastgpt/global/support/user/team/constant';
-import { NullPermission } from '@fastgpt/global/support/permission/constant';
+import { NullPermissionVal } from '@fastgpt/global/support/permission/constant';
 
 async function handler(req: ApiRequestProps<any>, res: ApiResponseType<any>) {
   const { userId } = await parseHeaderCert({ req, authToken: true });
@@ -28,16 +27,14 @@ async function handler(req: ApiRequestProps<any>, res: ApiResponseType<any>) {
         tmbId: tmb._id
       });
       // owner 自动拥有全部权限
-      const permission = new TeamPermission({
-        per: per ?? NullPermission,
-        isOwner: tmb.role === TeamMemberRoleEnum.owner
-      });
+      const isOwner = tmb.role === TeamMemberRoleEnum.owner;
+      const value = per ?? NullPermissionVal;
       return {
         teamId: team._id,
         teamName: team.name,
         avatar: team.avatar,
         role: tmb.role,
-        hasTeamManagePer: permission.hasTeamManagePer
+        hasTeamManagePer: isOwner || (value & TeamManagePermissionVal) === TeamManagePermissionVal
       };
     })
   );

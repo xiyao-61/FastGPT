@@ -3,12 +3,17 @@ import { NextAPI } from '@/service/middleware/entry';
 import { parseHeaderCert } from '@fastgpt/service/support/permission/controller';
 import { MongoTeamMember } from '@fastgpt/service/support/user/team/teamMemberSchema';
 import { getResourcePermission } from '@fastgpt/service/support/permission/controller';
-import { PerResourceTypeEnum } from '@fastgpt/global/support/permission/constant';
-import { TeamPermission } from '@fastgpt/global/support/permission/user/controller';
-import { TeamDefaultPermissionVal } from '@fastgpt/global/support/permission/user/constant';
+import {
+  PerResourceTypeEnum,
+  OwnerPermissionVal,
+  NullPermissionVal,
+  ReadPermissionVal,
+  WritePermissionVal,
+  ManagePermissionVal
+} from '@fastgpt/global/support/permission/constant';
+import { TeamMemberRoleEnum } from '@fastgpt/global/support/user/team/constant';
 import { MongoApp } from '@fastgpt/service/core/app/schema';
 import { MongoDataset } from '@fastgpt/service/core/dataset/schema';
-import { OwnerPermissionVal, NullPermission } from '@fastgpt/global/support/permission/constant';
 
 async function handler(req: ApiRequestProps, res: ApiResponseType) {
   const { teamId } = await parseHeaderCert({ req, authToken: true });
@@ -28,42 +33,52 @@ async function handler(req: ApiRequestProps, res: ApiResponseType) {
 
   const list = await Promise.all(
     members.map(async (member) => {
-      let isOwner = false;
+      // 判断是否是资源的拥有者
+      let isResourceOwner = false;
       if (resourceType === PerResourceTypeEnum.app && resourceId) {
         const app = await MongoApp.findById(resourceId).lean();
         if (app && String(app.tmbId) === String(member._id)) {
-          isOwner = true;
+          isResourceOwner = true;
         }
       } else if (resourceType === PerResourceTypeEnum.dataset && resourceId) {
         const dataset = await MongoDataset.findById(resourceId).lean();
         if (dataset && String(dataset.tmbId) === String(member._id)) {
-          isOwner = true;
+          isResourceOwner = true;
         }
+      } else if (resourceType === PerResourceTypeEnum.team) {
+        isResourceOwner = member.role === TeamMemberRoleEnum.owner;
       }
-      const per = await getResourcePermission({
-        resourceType,
-        teamId: member.teamId,
-        tmbId: member._id,
-        ...(resourceType !== PerResourceTypeEnum.team ? { resourceId } : {})
-      });
-      const permission = isOwner
-        ? new TeamPermission({ per: OwnerPermissionVal, isOwner: true })
-        : new TeamPermission({ per: per ?? NullPermission, isOwner: member.role === 'owner' });
+
+      let value;
+      if (isResourceOwner) {
+        value = OwnerPermissionVal;
+      } else {
+        // 普通成员查权限表，查不到就是无权限
+        const per = await getResourcePermission({
+          resourceType,
+          teamId: member.teamId,
+          tmbId: member._id,
+          ...(resourceType !== PerResourceTypeEnum.team ? { resourceId } : {})
+        });
+        value = per ?? NullPermissionVal; // 权限表里查不到就是无权限
+      }
+
       // 兼容 userId population
       let name = member.name;
       if (member.userId && typeof member.userId === 'object' && (member.userId as any).username) {
         name = (member.userId as any).username || member.name;
       }
+
       return {
         tmbId: String(member._id),
         name,
         avatar: member.avatar,
         permission: {
-          value: permission.value,
-          isOwner: permission.isOwner,
-          hasReadPer: permission.hasReadPer,
-          hasWritePer: permission.hasWritePer,
-          hasManagePer: permission.hasManagePer
+          value,
+          isOwner: isResourceOwner,
+          hasReadPer: isResourceOwner || (value & ReadPermissionVal) === ReadPermissionVal,
+          hasWritePer: isResourceOwner || (value & WritePermissionVal) === WritePermissionVal,
+          hasManagePer: isResourceOwner || (value & ManagePermissionVal) === ManagePermissionVal
         }
       };
     })

@@ -11,7 +11,7 @@ import {
   HStack,
   css
 } from '@chakra-ui/react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'next-i18next';
 import { useRequest2 } from '@fastgpt/web/hooks/useRequest';
 import { getPluginGroups, getPreviewPluginNode } from '@/web/core/app/api/plugin';
 import EmptyTip from '@fastgpt/web/components/common/EmptyTip';
@@ -56,7 +56,6 @@ export type TemplateListProps = {
 
 const NodeTemplateListItem = ({
   template,
-  templateType,
   handleAddNode,
   isPopover,
   onUpdateParentId
@@ -73,6 +72,7 @@ const NodeTemplateListItem = ({
   const { t } = useTranslation();
   const { screenToFlowPosition } = useReactFlow();
   const handleParams = useContextSelector(WorkflowEventContext, (v) => v.handleParams);
+  const isToolHandle = handleParams?.handleId === 'selectedTools';
 
   return (
     <MyTooltip
@@ -93,9 +93,11 @@ const NodeTemplateListItem = ({
           <Box mt={2} color={'myGray.500'} maxH={'100px'} overflow={'hidden'}>
             {t(template.intro as any) || t('common:core.workflow.Not intro')}
           </Box>
-          {/* {templateType === TemplateTypeEnum.systemPlugin && (
-            <CostTooltip cost={template.currentCost} hasTokenFee={template.hasTokenFee} />
-          )} */}
+          <CostTooltip
+            cost={template.currentCost}
+            hasTokenFee={template.hasTokenFee}
+            isFolder={template.isFolder}
+          />
         </Box>
       }
       shouldWrapChildren={false}
@@ -128,11 +130,16 @@ const NodeTemplateListItem = ({
           });
         }}
         onClick={() => {
-          if (template.isFolder && template.flowNodeType !== FlowNodeTypeEnum.toolSet) {
+          // Not tool handle, cannot add toolset
+          if (!isToolHandle && template.flowNodeType === FlowNodeTypeEnum.toolSet) {
             onUpdateParentId(template.id);
             return;
           }
-
+          // Team folder
+          if (template.isFolder && template.flowNodeType === FlowNodeTypeEnum.pluginModule) {
+            onUpdateParentId(template.id);
+            return;
+          }
           const position =
             isPopover && handleParams
               ? handleParams.addNodePosition
@@ -158,7 +165,6 @@ const NodeTemplateListItem = ({
         >
           {t(template.name as any)}
         </Box>
-
         {/* Folder right arrow */}
         {template.isFolder && (
           <Box
@@ -179,7 +185,6 @@ const NodeTemplateListItem = ({
             <MyIcon name="common/arrowRight" w={isPopover ? '16px' : '20px'} />
           </Box>
         )}
-
         {/* Author */}
         {!isPopover && template.authorAvatar && template.author && (
           <HStack spacing={1} maxW={'120px'} flexShrink={0}>
@@ -219,10 +224,6 @@ const NodeTemplateList = ({
       template: NodeTemplateListItemType;
       position: { x: number; y: number };
     }) => {
-      if (template.isFolder && template.flowNodeType !== FlowNodeTypeEnum.toolSet) {
-        return;
-      }
-
       try {
         const templateNode = await (async () => {
           try {

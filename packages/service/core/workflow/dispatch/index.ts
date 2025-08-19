@@ -125,8 +125,6 @@ type Props = ChatDispatchProps & {
   runtimeEdges: RuntimeEdgeItemType[];
 };
 type NodeResponseType = DispatchNodeResultType<{
-  [NodeOutputKeyEnum.answerText]?: string;
-  [NodeOutputKeyEnum.reasoningText]?: string;
   [key: string]: any;
 }>;
 type NodeResponseCompleteType = Omit<NodeResponseType, 'responseData'> & {
@@ -153,7 +151,7 @@ export async function dispatchWorkFlow(data: Props): Promise<DispatchFlowRespons
   } = data;
   const startTime = Date.now();
 
-  rewriteRuntimeWorkFlow(runtimeNodes, runtimeEdges);
+  await rewriteRuntimeWorkFlow({ nodes: runtimeNodes, edges: runtimeEdges, lang: data.lang });
 
   // 初始化深度和自动增加深度，避免无限嵌套
   if (!props.workflowDispatchDeep) {
@@ -181,6 +179,7 @@ export async function dispatchWorkFlow(data: Props): Promise<DispatchFlowRespons
   }
 
   let workflowRunTimes = 0;
+  let streamCheckTimer: NodeJS.Timeout | null = null;
 
   // Init
   if (isRootRuntime) {
@@ -199,25 +198,20 @@ export async function dispatchWorkFlow(data: Props): Promise<DispatchFlowRespons
       res.setHeader('Cache-Control', 'no-cache, no-transform');
 
       // 10s sends a message to prevent the browser from thinking that the connection is disconnected
-      const sendStreamTimerSign = () => {
-        setTimeout(() => {
-          props?.workflowStreamResponse?.({
-            event: SseResponseEventEnum.answer,
-            data: textAdaptGptResponse({
-              text: ''
-            })
-          });
-          sendStreamTimerSign();
-        }, 10000);
-      };
-      sendStreamTimerSign();
+      streamCheckTimer = setInterval(() => {
+        props?.workflowStreamResponse?.({
+          event: SseResponseEventEnum.answer,
+          data: textAdaptGptResponse({
+            text: ''
+          })
+        });
+      }, 10000);
     }
 
-    // Add system variables
+    // Get default variables
     variables = {
-      ...getSystemVariable(data),
       ...externalProvider.externalWorkflowVariables,
-      ...variables
+      ...getSystemVariables(data)
     };
   }
 
@@ -239,7 +233,8 @@ export async function dispatchWorkFlow(data: Props): Promise<DispatchFlowRespons
   function pushStore(
     { inputs = [] }: RuntimeNodeItemType,
     {
-      data: { answerText = '', reasoningText } = {},
+      answerText,
+      reasoningText,
       responseData,
       nodeDispatchUsages,
       toolResponses,
@@ -285,30 +280,20 @@ export async function dispatchWorkFlow(data: Props): Promise<DispatchFlowRespons
       chatAssistantResponse = chatAssistantResponse.concat(assistantResponses);
     } else {
       if (reasoningText) {
-        const isResponseReasoningText = inputs.find(
-          (item) => item.key === NodeInputKeyEnum.aiChatReasoning
-        )?.value;
-        if (isResponseReasoningText) {
-          chatAssistantResponse.push({
-            type: ChatItemValueTypeEnum.reasoning,
-            reasoning: {
-              content: reasoningText
-            }
-          });
-        }
+        chatAssistantResponse.push({
+          type: ChatItemValueTypeEnum.reasoning,
+          reasoning: {
+            content: reasoningText
+          }
+        });
       }
       if (answerText) {
-        // save assistant text response
-        const isResponseAnswerText =
-          inputs.find((item) => item.key === NodeInputKeyEnum.aiChatIsResponseText)?.value ?? true;
-        if (isResponseAnswerText) {
-          chatAssistantResponse.push({
-            type: ChatItemValueTypeEnum.text,
-            text: {
-              content: answerText
-            }
-          });
-        }
+        chatAssistantResponse.push({
+          type: ChatItemValueTypeEnum.text,
+          text: {
+            content: answerText
+          }
+        });
       }
     }
 
@@ -845,27 +830,43 @@ export async function dispatchWorkFlow(data: Props): Promise<DispatchFlowRespons
     };
   } catch (error) {
     return Promise.reject(error);
+  } finally {
+    if (streamCheckTimer) {
+      clearInterval(streamCheckTimer);
+    }
   }
 }
 
 /* get system variable */
-const getSystemVariable = ({
+const getSystemVariables = ({
   timezone,
   runningAppInfo,
   chatId,
   responseChatItemId,
   histories = [],
   uid,
-  chatConfig
+  chatConfig,
+  variables
 }: Props): SystemVariablesType => {
-  const variables = chatConfig?.variables || [];
-  const variablesMap = variables.reduce<Record<string, any>>((acc, item) => {
-    acc[item.key] = valueTypeFormat(item.defaultValue, item.valueType);
+  // Get global variables(Label -> key; Key -> key)
+  const globalVariables = chatConfig?.variables || [];
+  const variablesMap = globalVariables.reduce<Record<string, any>>((acc, item) => {
+    // API
+    if (variables[item.label] !== undefined) {
+      acc[item.key] = valueTypeFormat(variables[item.label], item.valueType);
+    }
+    // Web
+    else if (variables[item.key] !== undefined) {
+      acc[item.key] = valueTypeFormat(variables[item.key], item.valueType);
+    } else {
+      acc[item.key] = valueTypeFormat(item.defaultValue, item.valueType);
+    }
     return acc;
   }, {});
 
   return {
     ...variablesMap,
+    // System var:
     userId: uid,
     appId: String(runningAppInfo.id),
     chatId,

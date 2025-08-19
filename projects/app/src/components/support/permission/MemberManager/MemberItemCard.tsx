@@ -2,45 +2,48 @@ import React from 'react';
 import { useTranslation } from 'next-i18next';
 import { Box, Checkbox, HStack, VStack } from '@chakra-ui/react';
 import Avatar from '@fastgpt/web/components/common/Avatar';
-import PermissionTags from './PermissionTags';
-import { type PermissionValueType } from '@fastgpt/global/support/permission/type';
+import RoleTags from './RoleTags';
+import type { RoleValueType } from '@fastgpt/global/support/permission/type';
 import MyIcon from '@fastgpt/web/components/common/Icon';
 import OrgTags from '../../user/team/OrgTags';
 import Tag from '@fastgpt/web/components/common/Tag';
 
 function MemberItemCard({
   avatar,
-  key,
+  id,
   onChange: _onChange,
   isChecked,
   onDelete,
   name,
-  permission,
+  role,
   orgs,
   addOnly,
-  rightSlot
+  rightSlot,
+  isOwner
 }: {
   avatar: string;
-  key: string;
+  id: string;
   onChange: () => void;
   isChecked?: boolean;
   onDelete?: () => void;
   name: string;
-  permission?: PermissionValueType;
+  role?: RoleValueType;
   addOnly?: boolean;
   orgs?: string[];
   rightSlot?: React.ReactNode;
+  isOwner?: boolean; // 新增属性，标识是否为资源创建者
 }) {
-  const isAdded = addOnly && !!permission;
+  const isAdded = addOnly && !!role;
+  const isDisabled = isAdded || isOwner; // 已添加或者是创建者时禁用
   const onChange = () => {
-    if (!isAdded) _onChange();
+    if (!isDisabled) _onChange();
   };
   const { t } = useTranslation();
   return (
     <HStack
       justifyContent="space-between"
       alignItems="center"
-      key={key}
+      key={id}
       px="3"
       py="2"
       borderRadius="sm"
@@ -51,7 +54,7 @@ function MemberItemCard({
       onClick={onChange}
     >
       {isChecked !== undefined && (
-        <Checkbox isChecked={isChecked} pointerEvents="none" disabled={isAdded} />
+        <Checkbox isChecked={isChecked} pointerEvents="none" disabled={isDisabled} />
       )}
       <Avatar src={avatar} w="1.5rem" borderRadius={'50%'} />
 
@@ -61,8 +64,20 @@ function MemberItemCard({
         </Box>
         <Box lineHeight={1}>{orgs && orgs.length > 0 && <OrgTags orgs={orgs} />}</Box>
       </Box>
-      {!isAdded && permission && <PermissionTags permission={permission} />}
-      {isAdded && (
+      {isOwner && (
+        <Tag
+          mixBlendMode={'multiply'}
+          colorSchema="red"
+          border="none"
+          py={2}
+          px={3}
+          fontSize={'xs'}
+        >
+          {t('common:permission.Owner')}
+        </Tag>
+      )}
+      {!isAdded && !isOwner && role && <RoleTags permission={role} />}
+      {isAdded && !isOwner && (
         <Tag
           mixBlendMode={'multiply'}
           colorSchema="blue"

@@ -1,21 +1,10 @@
-import React, { useEffect, useState, useMemo } from 'react';
-import {
-  ModalBody,
-  ModalFooter,
-  Button,
-  Grid,
-  Flex,
-  Box,
-  HStack,
-  Spinner,
-  Text,
-  useToast
-} from '@chakra-ui/react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ModalBody, ModalFooter, Button, Grid, Flex, Box, useToast } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import MyModal from '@fastgpt/web/components/common/MyModal';
 import SearchInput from '@fastgpt/web/components/common/Input/SearchInput';
 import MemberItemCard from './MemberItemCard';
-import PermissionSelect from './PermissionSelect';
+import RoleSelect from './RoleSelect';
 import {
   getMemberResourcePermission,
   updateMemberResourcePermission
@@ -24,6 +13,8 @@ import type { ResourceMemberPermissionItem } from '@fastgpt/global/support/user/
 import { useContextSelector } from 'use-context-selector';
 import { CollaboratorContext } from './context';
 import { useScrollPagination } from '@fastgpt/web/hooks/useScrollPagination';
+import { PerResourceTypeEnum } from '@fastgpt/global/support/permission/constant';
+import { AppPermissionKeyEnum } from '@fastgpt/global/support/permission/app/constant';
 
 function MemberModal({
   onClose,
@@ -37,21 +28,22 @@ function MemberModal({
   const { t: tCommon } = useTranslation('common');
   const { t: tUser } = useTranslation('user');
   const toast = useToast();
+
   const [searchKey, setSearchKey] = useState('');
   const [selectedMembers, setSelectedMembers] = useState<ResourceMemberPermissionItem[]>([]);
-  const [selectedPermission, setSelectedPermission] = useState<number | undefined>(undefined);
+  const [selectedRole, setSelectedRole] = useState<number | undefined>(undefined);
   const [submitting, setSubmitting] = useState(false);
-  const { permissionList, getPerLabelList } = useContextSelector(CollaboratorContext, (v) => v);
+
+  const roleList = useContextSelector(CollaboratorContext, (v) => v.roleList);
+  const getRoleLabelList = useContextSelector(CollaboratorContext, (v) => v.getRoleLabelList);
 
   const {
     ScrollData,
     isLoading,
-    data: scrollMembers,
-    total: scrollTotal,
-    refreshList
+    data: scrollMembers
   } = useScrollPagination(
     (params) => {
-      const { offset = 0, pageSize = 2 } = params;
+      const { offset = 0, pageSize = 20 } = params;
       const _offset = Number(offset);
       const _pageSize = Number(pageSize);
       const pageNum = Math.floor(_offset / _pageSize) + 1;
@@ -73,14 +65,13 @@ function MemberModal({
     }
   );
 
-  // 只要 permissionList 变化就设置默认权限
   useEffect(() => {
-    if (permissionList?.read?.value !== undefined) {
-      setSelectedPermission(permissionList.read.value);
+    // 对于所有资源类型，默认选择基础读权限
+    if (roleList?.read?.value !== undefined) {
+      setSelectedRole(roleList.read.value);
     }
-  }, [permissionList]);
+  }, [roleList, resourceType]);
 
-  // 选择成员
   const handleSelect = (member: ResourceMemberPermissionItem) => {
     setSelectedMembers((prev) => {
       if (prev.find((m) => m.tmbId === member.tmbId)) {
@@ -90,15 +81,14 @@ function MemberModal({
     });
   };
 
-  // 权限 label（多权限拼接）
-  const perLabel = useMemo(() => {
-    if (selectedPermission === undefined) return '';
-    return getPerLabelList ? getPerLabelList(selectedPermission).join('、') : '';
-  }, [getPerLabelList, selectedPermission]);
+  // role label
+  const roleLabel = useMemo(() => {
+    if (selectedRole === undefined) return '';
+    return getRoleLabelList ? getRoleLabelList(selectedRole).join('、') : '';
+  }, [getRoleLabelList, selectedRole]);
 
-  // 批量提交
   const handleSubmit = async () => {
-    if (!selectedPermission || selectedMembers.length === 0) return;
+    if (!selectedRole || selectedMembers.length === 0) return;
     setSubmitting(true);
     try {
       for (const member of selectedMembers) {
@@ -106,16 +96,15 @@ function MemberModal({
           resourceType,
           resourceId,
           tmbId: member.tmbId,
-          permission: selectedPermission
+          permission: selectedRole
         });
       }
       setSelectedMembers([]);
-      setSelectedPermission(undefined);
-      setSubmitting(false);
+      setSelectedRole(undefined);
       toast({ status: 'success', title: tCommon('action_success'), position: 'top' });
+      onClose();
     } finally {
       setSubmitting(false);
-      onClose();
     }
   };
 
@@ -139,7 +128,7 @@ function MemberModal({
           h={'100%'}
           gap={[4, null, 0]}
         >
-          {/* 左侧成员列表 */}
+          {/* left: members */}
           <Flex
             flexDirection="column"
             p={[2, 4]}
@@ -159,7 +148,7 @@ function MemberModal({
             <Box mt={3} flexGrow="1" h={0} minH={0}>
               <ScrollData style={{ height: '100%' }}>
                 {(scrollMembers as ResourceMemberPermissionItem[])
-                  .filter((m: ResourceMemberPermissionItem) =>
+                  ?.filter((m: ResourceMemberPermissionItem) =>
                     m.name?.toLowerCase().includes(searchKey.toLowerCase())
                   )
                   .map((member: ResourceMemberPermissionItem) => {
@@ -168,18 +157,21 @@ function MemberModal({
                     return (
                       <MemberItemCard
                         key={member.tmbId}
+                        id={member.tmbId}
                         avatar={member.avatar}
                         name={member.name}
                         isChecked={isChecked}
                         onChange={() => handleSelect(member)}
-                        permission={member.permission?.value ?? 0}
+                        role={member.permission?.value ?? 0}
+                        isOwner={member.permission?.isOwner}
                       />
                     );
                   })}
               </ScrollData>
             </Box>
           </Flex>
-          {/* 右侧已选成员 */}
+
+          {/* right: selected */}
           <Flex flexDirection="column" p={[2, 4]} overflowY="auto" overflowX="hidden">
             <Box mb={2} fontWeight="bold" fontSize={['md', null, 'lg']}>
               {tUser('has_chosen')}: {selectedMembers.length}
@@ -188,11 +180,13 @@ function MemberModal({
               {selectedMembers.map((member) => (
                 <MemberItemCard
                   key={member.tmbId}
+                  id={member.tmbId}
                   avatar={member.avatar}
                   name={member.name}
                   isChecked={true}
                   onChange={() => handleSelect(member)}
-                  permission={member.permission?.value ?? 0}
+                  role={member.permission?.value ?? 0}
+                  isOwner={member.permission?.isOwner}
                 />
               ))}
             </Box>
@@ -200,9 +194,9 @@ function MemberModal({
         </Grid>
       </ModalBody>
       <ModalFooter>
-        {!!permissionList && (
-          <PermissionSelect
-            value={selectedPermission}
+        {!!roleList && (
+          <RoleSelect
+            value={selectedRole}
             Button={
               <Flex
                 alignItems={'center'}
@@ -213,9 +207,8 @@ function MemberModal({
                 borderRadius={'md'}
                 h={'32px'}
               >
-                {tCommon(perLabel as any)}
+                {roleLabel}
                 <span style={{ marginLeft: 4, display: 'flex', alignItems: 'center' }}>
-                  {/* 下拉箭头 */}
                   <svg
                     width="16"
                     height="16"
@@ -231,7 +224,7 @@ function MemberModal({
                 </span>
               </Flex>
             }
-            onChange={setSelectedPermission}
+            onChange={(v) => setSelectedRole(v)}
           />
         )}
         <Button
@@ -239,7 +232,7 @@ function MemberModal({
           ml="4"
           h={'32px'}
           onClick={handleSubmit}
-          isDisabled={selectedMembers.length === 0 || !selectedPermission}
+          isDisabled={selectedMembers.length === 0 || !selectedRole}
           fontSize={['sm', null, 'md']}
         >
           {tCommon('Confirm')}

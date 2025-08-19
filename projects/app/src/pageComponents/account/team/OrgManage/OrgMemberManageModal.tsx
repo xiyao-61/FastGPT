@@ -156,6 +156,7 @@ function OrgMemberManageModal({
                     <MemberItemCard
                       avatar={member.avatar}
                       key={member.tmbId!}
+                      id={member.tmbId!}
                       name={member.memberName}
                       onChange={() => handleToggleSelect(member.tmbId!)}
                       isChecked={!!isSelected(member.tmbId!)}

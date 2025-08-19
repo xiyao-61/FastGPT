@@ -6,10 +6,11 @@
     "prepare": "husky install",
     "format-code": "prettier --config \"./.prettierrc.js\" --write \"./**/src/**/*.{ts,tsx,scss}\"",
     "format-doc": "zhlint --dir ./document/ *.mdx --fix",
+    "initDocTime": "node ./document/script/initDocTime.js",
+    "initDocToc": "node ./document/lib/generateToc.js",
     "gen:theme-typings": "chakra-cli tokens packages/web/styles/theme.ts --out node_modules/.pnpm/node_modules/@chakra-ui/styled-system/dist/theming.types.d.ts",
-    "initLastModified": "node ./document/github.js",
     "postinstall": "pnpm gen:theme-typings",
-    "initIcon": "node ./scripts/icon/init.js",
+    "initIcon": "node ./scripts/icon/init.js && prettier --config \"./.prettierrc.js\" --write \"packages/web/components/common/Icon/constants.ts\"",
     "previewIcon": "node ./scripts/icon/index.js",
     "api:gen": "tsc ./scripts/openapi/index.ts && node ./scripts/openapi/index.js && npx @redocly/cli build-docs ./scripts/openapi/openapi.json -o ./projects/app/public/openapi/index.html",
     "create:i18n": "node ./scripts/i18n/index.js",
@@ -44,7 +45,8 @@
     ],
     "./document/**/**/*.mdx": [
       "pnpm format-doc",
-      "pnpm initLastModified",
+      "pnpm initDocTime",
+      "pnpm initDocToc",
       "git add ."
     ]
   },
@@ -52,7 +54,12 @@
     "mdast-util-gfm-autolink-literal": "2.0.0"
   },
   "engines": {
-    "node": ">=18.16.0",
-    "pnpm": ">=9.0.0"
+    "node": ">=20"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "9.15.9"
+    }
   }
 }

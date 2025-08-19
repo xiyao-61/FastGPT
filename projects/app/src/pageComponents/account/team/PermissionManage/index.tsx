@@ -22,7 +22,6 @@ import {
 } from '@fastgpt/global/support/permission/user/constant';
 import { useToast } from '@fastgpt/web/hooks/useToast';
 import type { MemberPermissionItem } from '@fastgpt/global/support/user/team/type.d';
-import MyBox from '@fastgpt/web/components/common/MyBox';
 import { useUserStore } from '@/web/support/user/useUserStore';
 import { useScrollPagination } from '@fastgpt/web/hooks/useScrollPagination';
 
@@ -57,14 +56,11 @@ function PermissionManage({ Tabs }: { Tabs: React.ReactNode }) {
   const { t } = useTranslation('common');
   const { toast } = useToast();
   const { userInfo } = useUserStore();
-  const [selectedMembers, setSelectedMembers] = useState<MemberPermissionItem[]>([]);
   const [updating, setUpdating] = useState<{ tmbId: string; key: string } | null>(null);
-
   const {
     ScrollData,
     isLoading,
     data: members,
-    total: scrollTotal,
     refreshList,
     setData
   } = useScrollPagination(
@@ -73,10 +69,7 @@ function PermissionManage({ Tabs }: { Tabs: React.ReactNode }) {
       const _offset = Number(offset);
       const _pageSize = Number(pageSize);
       const pageNum = Math.floor(_offset / _pageSize) + 1;
-      return getMemberPermission({
-        pageNum,
-        pageSize: _pageSize
-      });
+      return getMemberPermission({ pageNum, pageSize: _pageSize });
     },
     {
       pageSize: 10,

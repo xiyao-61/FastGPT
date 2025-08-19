@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Box, Grid, Flex, IconButton, HStack } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
-import { delAppById, putAppById, resumeInheritPer, changeOwner } from '@/web/core/app/api';
+import { delAppById, putAppById } from '@/web/core/app/api';
 import { useConfirm } from '@fastgpt/web/hooks/useConfirm';
 import MyIcon from '@fastgpt/web/components/common/Icon';
 import Avatar from '@fastgpt/web/components/common/Avatar';
@@ -17,7 +17,7 @@ import { useFolderDrag } from '@/components/common/folder/useFolderDrag';
 import dynamic from 'next/dynamic';
 import type { EditResourceInfoFormType } from '@/components/common/Modal/EditResourceModal';
 import MyMenu, { type MenuItemType } from '@fastgpt/web/components/common/MyMenu';
-import { AppPermissionList } from '@fastgpt/global/support/permission/app/constant';
+import { AppRoleList } from '@fastgpt/global/support/permission/app/constant';
 import {
   deleteAppCollaborators,
   getCollaboratorList,
@@ -29,16 +29,14 @@ import MemberModal from '@/components/support/permission/MemberManager/MemberMod
 import CollaboratorContextProvider from '@/components/support/permission/MemberManager/context';
 
 const EditResourceModal = dynamic(() => import('@/components/common/Modal/EditResourceModal'));
-const ConfigPerModal = dynamic(() => import('@/components/support/permission/ConfigPerModal'));
 
 import type { EditHttpPluginProps } from './HttpPluginEditModal';
 import { postCopyApp } from '@/web/core/app/api/app';
 import { formatTimeToChatTime } from '@fastgpt/global/common/string/time';
 import { useSystem } from '@fastgpt/web/hooks/useSystem';
 import { useChatStore } from '@/web/core/chat/context/useChatStore';
-import { type RequireOnlyOne } from '@fastgpt/global/common/type/utils';
 import UserBox from '@fastgpt/web/components/common/UserBox';
-import { type PermissionValueType } from '@fastgpt/global/support/permission/type';
+import { ChatSidebarPaneEnum } from '@/pageComponents/chat/constants';
 const HttpEditModal = dynamic(() => import('./HttpPluginEditModal'));
 
 const ListItem = () => {
@@ -60,16 +58,7 @@ const ListItem = () => {
 
   const [editedApp, setEditedApp] = useState<EditResourceInfoFormType>();
   const [editHttpPlugin, setEditHttpPlugin] = useState<EditHttpPluginProps>();
-  const [editPerAppId, setEditPerAppId] = useState<string>();
   const [showMemberModal, setShowMemberModal] = useState<{ resourceId: string } | null>(null);
-
-  const editPerApp = useMemo(
-    () =>
-      editPerAppId !== undefined
-        ? myApps.find((item) => String(item._id) === String(editPerAppId))
-        : undefined,
-    [editPerAppId, myApps]
-  );
 
   const parentApp = useMemo(() => myApps.find((item) => item._id === parentId), [parentId, myApps]);
 
@@ -101,7 +90,10 @@ const ListItem = () => {
       return delAppById(id);
     },
     {
-      onSuccess() {
+      onSuccess(data) {
+        data.forEach((appId) => {
+          localStorage.removeItem(`app_log_keys_${appId}`);
+        });
         loadMyApps();
       },
       successToast: t('common:delete_success'),
@@ -120,18 +112,7 @@ const ListItem = () => {
     successToast: t('app:create_copy_success')
   });
 
-  const { runAsync: onResumeInheritPermission } = useRequest2(
-    () => {
-      return resumeInheritPer(editPerApp!._id);
-    },
-    {
-      manual: true,
-      errorToast: t('common:permission.Resume InheritPermission Failed'),
-      onSuccess() {
-        loadMyApps();
-      }
-    }
-  );
+  // no ConfigPerModal flow; using MemberModal for collaborators
 
   return (
     <>
@@ -153,7 +134,7 @@ const ListItem = () => {
               label={
                 app.type === AppTypeEnum.folder
                   ? t('common:open_folder')
-                  : app.permission.hasWritePer
+                  : app.permission.hasWritePer || app.permission.hasReadChatLogPer
                     ? t('app:edit_app')
                     : t('app:go_to_chat')
               }
@@ -190,10 +171,13 @@ const ListItem = () => {
                         parentId: app._id
                       }
                     });
-                  } else if (app.permission.hasWritePer) {
+                  } else if (app.permission.hasWritePer || app.permission.hasReadChatLogPer) {
                     router.push(`/app/detail?appId=${app._id}`);
                   } else {
-                    window.open(`/chat?appId=${app._id}`, '_blank');
+                    window.open(
+                      `/chat?appId=${app._id}&pane=${ChatSidebarPaneEnum.RECENTLY_USED_APPS}`,
+                      '_blank'
+                    );
                   }
                 }}
                 {...getBoxProps({
@@ -249,7 +233,7 @@ const ListItem = () => {
                     )}
                     {(AppFolderTypeList.includes(app.type)
                       ? app.permission.hasManagePer
-                      : app.permission.hasWritePer) && (
+                      : app.permission.hasWritePer || app.permission.hasReadChatLogPer) && (
                       <Box className="more" display={['', 'none']}>
                         <MyMenu
                           size={'xs'}
@@ -271,7 +255,10 @@ const ListItem = () => {
                                         type: 'grayBg' as MenuItemType,
                                         label: t('app:go_to_chat'),
                                         onClick: () => {
-                                          window.open(`/chat?appId=${app._id}`, '_blank');
+                                          window.open(
+                                            `/chat?appId=${app._id}&pane=${ChatSidebarPaneEnum.RECENTLY_USED_APPS}`,
+                                            '_blank'
+                                          );
                                         }
                                       }
                                     ]
@@ -287,7 +274,10 @@ const ListItem = () => {
                                         type: 'grayBg' as MenuItemType,
                                         label: t('app:go_to_run'),
                                         onClick: () => {
-                                          window.open(`/chat?appId=${app._id}`, '_blank');
+                                          window.open(
+                                            `/chat?appId=${app._id}&pane=${ChatSidebarPaneEnum.RECENTLY_USED_APPS}`,
+                                            '_blank'
+                                          );
                                         }
                                       }
                                     ]
@@ -348,7 +338,8 @@ const ListItem = () => {
                                   }
                                 ]
                               : []),
-                            ...(app.type === AppTypeEnum.toolSet ||
+                            ...(!app.permission?.hasWritePer ||
+                            app.type === AppTypeEnum.toolSet ||
                             app.type === AppTypeEnum.folder ||
                             app.type === AppTypeEnum.httpPlugin
                               ? []
@@ -417,7 +408,7 @@ const ListItem = () => {
           return (
             <CollaboratorContextProvider
               permission={app.permission}
-              permissionList={AppPermissionList}
+              roleList={AppRoleList}
               onGetCollaboratorList={() => getCollaboratorList(showMemberModal.resourceId)}
               onUpdateCollaborators={(props) =>
                 postUpdateAppCollaborators({ ...props, appId: showMemberModal.resourceId })

@@ -13,7 +13,7 @@ import pluginErrList from '../../common/error/code/plugin';
 export const getDefaultAppForm = (): AppSimpleEditFormType => {
   return {
     aiSettings: {
-      model: 'gpt-4o-mini',
+      model: '',
       systemPrompt: '',
       temperature: 0,
       isResponseAnswerText: true,
@@ -158,7 +158,8 @@ export const appWorkflow2Form = ({
         inputs: node.inputs,
         outputs: node.outputs,
         templateType: FlowNodeTemplateTypeEnum.other,
-        pluginData: node.pluginData
+        pluginData: node.pluginData,
+        toolConfig: node.toolConfig
       });
     } else if (node.flowNodeType === FlowNodeTypeEnum.systemConfig) {
       defaultAppForm.chatConfig = getAppChatConfig({

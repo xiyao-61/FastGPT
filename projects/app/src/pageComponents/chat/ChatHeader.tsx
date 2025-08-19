@@ -23,6 +23,13 @@ import { getMyApps } from '@/web/core/app/api';
 import SelectOneResource from '@/components/common/folder/SelectOneResource';
 import { ChatItemContext } from '@/web/core/chat/context/chatItemContext';
 import VariablePopover from '@/components/core/chat/ChatContainer/ChatBox/components/VariablePopover';
+import { useCopyData } from '@fastgpt/web/hooks/useCopyData';
+import { ChatSettingContext } from '@/web/core/chat/context/chatSettingContext';
+import {
+  ChatSidebarPaneEnum,
+  DEFAULT_LOGO_BANNER_COLLAPSED_URL
+} from '@/pageComponents/chat/constants';
+import { useChatStore } from '@/web/core/chat/context/useChatStore';
 
 const ChatHeader = ({
   history,
@@ -40,6 +47,10 @@ const ChatHeader = ({
 
   const chatData = useContextSelector(ChatItemContext, (v) => v.chatBoxData);
   const isVariableVisible = useContextSelector(ChatItemContext, (v) => v.isVariableVisible);
+
+  const pane = useContextSelector(ChatSettingContext, (v) => v.pane);
+  const chatSettings = useContextSelector(ChatSettingContext, (v) => v.chatSettings);
+
   const isPlugin = chatData.app.type === AppTypeEnum.plugin;
   const router = useRouter();
   const isChat = router.pathname === '/chat';
@@ -59,6 +70,7 @@ const ChatHeader = ({
             totalRecordsCount={totalRecordsCount}
             title={chatData.title || t('common:core.chat.New Chat')}
             chatModels={chatData.app.chatModels}
+            chatId={chatData.chatId || ''}
           />
           <Box flex={1} />
         </>
@@ -66,8 +78,16 @@ const ChatHeader = ({
         <MobileHeader
           apps={apps}
           appId={chatData.appId}
-          name={chatData.app.name}
-          avatar={chatData.app.avatar}
+          name={
+            pane === ChatSidebarPaneEnum.HOME
+              ? chatSettings?.homeTabTitle || 'FastGPT'
+              : chatData.app.name
+          }
+          avatar={
+            pane === ChatSidebarPaneEnum.HOME
+              ? chatSettings?.squareLogoUrl || DEFAULT_LOGO_BANNER_COLLAPSED_URL
+              : chatData.app.avatar
+          }
           showHistory={showHistory}
         />
       )}
@@ -96,8 +116,9 @@ const MobileDrawer = ({
     app = 'app'
   }
   const { t } = useTranslation();
-  const router = useRouter();
-  const isTeamChat = router.pathname === '/chat/team';
+
+  const { setChatId } = useChatStore();
+
   const [currentTab, setCurrentTab] = useState<TabEnum>(TabEnum.recently);
 
   const getAppList = useCallback(async ({ parentId }: GetResourceFolderListProps) => {
@@ -110,11 +131,13 @@ const MobileDrawer = ({
       }))
     );
   }, []);
-  const { onChangeAppId } = useContextSelector(ChatContext, (v) => v);
+
+  const handlePaneChange = useContextSelector(ChatSettingContext, (v) => v.handlePaneChange);
 
   const onclickApp = (id: string) => {
-    onChangeAppId(id);
+    handlePaneChange(ChatSidebarPaneEnum.RECENTLY_USED_APPS, id);
     onCloseDrawer();
+    setChatId();
   };
 
   return (
@@ -145,12 +168,8 @@ const MobileDrawer = ({
             px: 2
           }}
           list={[
-            ...(isTeamChat
-              ? [{ label: t('app:all_apps'), value: TabEnum.recently }]
-              : [
-                  { label: t('common:core.chat.Recent use'), value: TabEnum.recently },
-                  { label: t('app:all_apps'), value: TabEnum.app }
-                ])
+            { label: t('common:core.chat.Recent use'), value: TabEnum.recently },
+            { label: t('app:all_apps'), value: TabEnum.app }
           ]}
           value={currentTab}
           onChange={setCurrentTab}
@@ -234,14 +253,22 @@ const MobileHeader = ({
   return (
     <>
       {showHistory && (
-        <MyIcon name={'menu'} w={'20px'} h={'20px'} color={'myGray.900'} onClick={onOpenSlider} />
+        <MyIcon
+          name={'core/chat/sidebar/menu'}
+          w={'20px'}
+          h={'20px'}
+          color={'myGray.900'}
+          onClick={onOpenSlider}
+        />
       )}
       <Flex px={3} alignItems={'center'} flex={'1 0 0'} w={0} justifyContent={'center'}>
         <Flex alignItems={'center'} onClick={toggleDrawer}>
           <Avatar borderRadius={'sm'} src={avatar} w={'1rem'} />
+
           <Box ml={1} className="textEllipsis">
             {name}
           </Box>
+
           {isShareChat ? null : (
             <MyIcon
               name={'core/chat/chevronSelector'}
@@ -251,6 +278,7 @@ const MobileHeader = ({
           )}
         </Flex>
       </Flex>
+
       {isOpenDrawer && !isShareChat && (
         <MobileDrawer apps={apps} appId={appId} onCloseDrawer={onCloseDrawer} />
       )}
@@ -261,19 +289,33 @@ const MobileHeader = ({
 export const PcHeader = ({
   title,
   chatModels,
-  totalRecordsCount
+  totalRecordsCount,
+  chatId
 }: {
   title: string;
   chatModels?: string[];
   totalRecordsCount: number;
+  chatId: string;
 }) => {
   const { t } = useTranslation();
+  const { copyData } = useCopyData();
 
   return (
     <>
-      <Box mr={3} maxW={'200px'} className="textEllipsis" color={'myGray.1000'}>
-        {title}
-      </Box>
+      <MyTooltip label={chatId ? t('common:chat_chatId', { chatId }) : ''}>
+        <Box
+          mr={3}
+          maxW={'200px'}
+          className="textEllipsis"
+          color={'myGray.1000'}
+          cursor={'pointer'}
+          onClick={() => {
+            copyData(chatId);
+          }}
+        >
+          {title}
+        </Box>
+      </MyTooltip>
       <MyTag>
         <MyIcon name={'history'} w={'14px'} />
         <Box ml={1}>
