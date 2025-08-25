@@ -167,15 +167,11 @@ const LineChartComponent = ({
           </Box>
           <QuestionTip label={description} />
         </Flex>
-        <Box filter={blur ? 'blur(7.5px)' : 'none'} pointerEvents={blur ? 'none' : 'auto'}>
+        <Box filter={'none'} pointerEvents={'auto'}>
           {HeaderRightChildren}
         </Box>
       </Flex>
-      <ResponsiveContainer
-        width="100%"
-        height={'100%'}
-        style={{ filter: blur ? 'blur(7.5px)' : 'none' }}
-      >
+      <ResponsiveContainer width="100%" height={'100%'} style={{ filter: 'none' }}>
         <LineChart
           data={data}
           margin={{ top: 5, right: 30, left: 0, bottom: HeaderRightChildren ? 20 : 15 }}

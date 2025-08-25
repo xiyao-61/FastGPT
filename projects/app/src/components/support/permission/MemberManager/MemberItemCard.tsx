@@ -34,7 +34,7 @@ function MemberItemCard({
   isOwner?: boolean; // 新增属性，标识是否为资源创建者
 }) {
   const isAdded = addOnly && !!role;
-  const isDisabled = isAdded || isOwner; // 已添加或者是创建者时禁用
+  const isDisabled = isAdded || isOwner || name === 'root'; // 已添加或者是创建者时禁用
   const onChange = () => {
     if (!isDisabled) _onChange();
   };

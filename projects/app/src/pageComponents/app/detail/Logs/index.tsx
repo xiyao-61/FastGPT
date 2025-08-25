@@ -52,7 +52,7 @@ const Logs = () => {
           alignItems={'center'}
         >
           <Flex flex={'1 0 0'} gap={2}>
-            <Flex
+            {/* <Flex
               px={2}
               py={2}
               cursor={'pointer'}
@@ -67,7 +67,7 @@ const Logs = () => {
                 {t('app:logs_app_data')}
               </Box>
               <ProTag />
-            </Flex>
+            </Flex> */}
             <Flex
               px={2}
               py={2}

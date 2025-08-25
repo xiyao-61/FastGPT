@@ -845,14 +845,15 @@ const TotalData = ({ appId }: { appId: string }) => {
     }
   } = useRequest2(
     async () => {
-      if (feConfigs?.isPlus) {
-        return await getAppTotalData({ appId });
-      }
-      return {
-        totalUsers: 455,
-        totalChats: 22112,
-        totalPoints: 112233
-      };
+      return await getAppTotalData({ appId });
+      // if (feConfigs?.isPlus) {
+      //   return await getAppTotalData({ appId });
+      // }
+      // return {
+      //   totalUsers: 455,
+      //   totalChats: 22112,
+      //   totalPoints: 112233
+      // };
     },
     {
       manual: false,
@@ -914,12 +915,7 @@ const TotalData = ({ appId }: { appId: string }) => {
               <Box fontSize={'sm'} color={'myGray.500'} mb={1}>
                 {item.label}
               </Box>
-              <Box
-                fontSize={'28px'}
-                fontWeight={'medium'}
-                color={'myGray.900'}
-                filter={feConfigs?.isPlus ? 'none' : 'blur(7.5px)'}
-              >
+              <Box fontSize={'28px'} fontWeight={'medium'} color={'myGray.900'} filter={'none'}>
                 {item.value.toLocaleString()}
               </Box>
             </Flex>
